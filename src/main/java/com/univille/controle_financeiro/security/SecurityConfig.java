@@ -57,7 +57,7 @@ public class SecurityConfig {
                 .and()
                 .authorizeHttpRequests(authz -> authz
                         // agora só precisamos liberar explicitamente as páginas públicas
-                        .requestMatchers("/", "/login", "/register", "/api/auth/**", "/h2-console/**")
+                        .requestMatchers("/", "/login", "/register", "/dashboard", "/categories", "/api/auth/**", "/h2-console/**")
                         .permitAll()
                         .anyRequest().authenticated()
                 )
