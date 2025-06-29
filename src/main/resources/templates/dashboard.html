@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,13 +14,7 @@
     <p>Carregando dados...</p>
 </div>
 
-<div class="header">
-    <div class="menu-icon">☰</div>
-    <div class="user-info">
-        <span class="user-name" id="userName">Carregando...</span>
-        <button class="logout-btn" onclick="logout()">Sair</button>
-    </div>
-</div>
+<div th:replace="fragments/navbar :: privateNavbar"></div>
 
 <div class="container">
     <nav class="sidebar">

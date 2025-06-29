@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,27 +15,7 @@
     <p>Carregando categorias...</p>
 </div>
 
-<div class="header">
-    <div class="header-left">
-        <div class="menu-icon">
-            <i class="fas fa-bars"></i>
-        </div>
-        <div class="logo">
-            <i class="fas fa-chart-pie"></i>
-            <span>FinanceControl</span>
-        </div>
-    </div>
-    <div class="user-info">
-        <div class="user-avatar">
-            <i class="fas fa-user"></i>
-        </div>
-        <span class="user-name" id="userName"></span>
-        <button class="logout-btn" onclick="FinanceUtils.logout()">
-            <i class="fas fa-sign-out-alt"></i>
-            Sair
-        </button>
-    </div>
-</div>
+<div th:replace="fragments/navbar :: privateNavbar"></div>
 
 <div class="main-container">
     <nav class="sidebar">
