@@ -24,11 +24,11 @@ function setupLoginForm() {
         const password = document.getElementById('password').value;
 
         // Limpar mensagens anteriores
-        hideMessage('errorMessage');
-        hideMessage('successMessage');
+        FinanceUtils.hideMessage('errorMessage');
+        FinanceUtils.hideMessage('successMessage');
 
         try {
-            showLoading();
+            FinanceUtils.showLoading();
 
             const response = await fetch('/api/auth/login', {
                 method: 'POST',
@@ -41,7 +41,7 @@ function setupLoginForm() {
                 })
             });
 
-            hideLoading();
+            FinanceUtils.hideLoading();
 
             if (response.ok) {
                 const data = await response.json();
@@ -51,7 +51,7 @@ function setupLoginForm() {
                 localStorage.setItem('userEmail', data.email);
                 localStorage.setItem('userName', data.name);
 
-                showMessage('successMessage', 'Login realizado com sucesso!');
+                FinanceUtils.showMessage('successMessage', 'Login realizado com sucesso!');
 
                 // Redirecionar para o dashboard
                 setTimeout(() => {
@@ -59,11 +59,11 @@ function setupLoginForm() {
                 }, 1000);
             } else {
                 const errorText = await response.text();
-                showMessage('errorMessage', errorText || 'Erro ao fazer login', true);
+                FinanceUtils.showMessage('errorMessage', errorText || 'Erro ao fazer login', true);
             }
         } catch (error) {
-            hideLoading();
-            showMessage('errorMessage', 'Erro de conexão. Tente novamente.', true);
+            FinanceUtils.hideLoading();
+            FinanceUtils.showMessage('errorMessage', 'Erro de conexão. Tente novamente.', true);
         }
     });
 }

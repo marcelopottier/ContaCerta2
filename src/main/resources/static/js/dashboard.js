@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Verificar autenticação
 function checkAuth() {
-    if (!isLoggedIn()) {
+    if (!FinanceUtils.isLoggedIn()) {
         window.location.href = '/login';
         return false;
     }
@@ -29,7 +29,7 @@ function checkAuth() {
 
 // Mostrar informações do usuário
 function displayUserInfo() {
-    const user = getCurrentUser();
+    const user = FinanceUtils.getCurrentUser();
     const userName = document.getElementById('userName');
     if (userName && user.name) {
         userName.textContent = user.name;
@@ -39,9 +39,9 @@ function displayUserInfo() {
 // Carregar dados do dashboard
 async function loadDashboard() {
     try {
-        showLoading();
+        FinanceUtils.showLoading();
 
-        const response = await fetchWithAuth('/api/dashboard');
+        const response = await FinanceUtils.fetchWithAuth('/api/dashboard');
         if (!response) return;
 
         if (response.ok) {
@@ -53,7 +53,7 @@ async function loadDashboard() {
     } catch (error) {
         showError('Erro de conexão');
     } finally {
-        hideLoading();
+        FinanceUtils.hideLoading();
     }
 }
 
@@ -64,9 +64,9 @@ function updateDashboard(data) {
     const totalSaidas = document.getElementById('totalSaidas');
     const saldoAtual = document.getElementById('saldoAtual');
 
-    if (totalEntradas) totalEntradas.textContent = formatCurrency(data.totalEntradas || 0);
-    if (totalSaidas) totalSaidas.textContent = formatCurrency(data.totalSaidas || 0);
-    if (saldoAtual) saldoAtual.textContent = formatCurrency(data.saldo || 0);
+    if (totalEntradas) totalEntradas.textContent = FinanceUtils.formatCurrency(data.totalEntradas || 0);
+    if (totalSaidas) totalSaidas.textContent = FinanceUtils.formatCurrency(data.totalSaidas || 0);
+    if (saldoAtual) saldoAtual.textContent = FinanceUtils.formatCurrency(data.saldo || 0);
 
     // Atualizar gráfico
     updateChart(data);
@@ -161,10 +161,10 @@ function updateRecentTransactions(transactions) {
             <div class="activity-info">
                 <div class="activity-description">${transaction.description || 'Sem descrição'}</div>
                 <div class="activity-category">${transaction.categoryName}</div>
-                <div class="activity-date">${formatDate(transaction.date)}</div>
+                <div class="activity-date">${FinanceUtils.formatDate(transaction.date)}</div>
             </div>
             <div class="activity-value ${transaction.type.toLowerCase()}">
-                ${transaction.type === 'ENTRADA' ? '+' : '-'} ${formatCurrency(transaction.value)}
+                ${transaction.type === 'ENTRADA' ? '+' : '-'} ${FinanceUtils.formatCurrency(transaction.value)}
             </div>
         </div>
     `).join('');
@@ -173,7 +173,7 @@ function updateRecentTransactions(transactions) {
 // Carregar categorias
 async function loadCategories() {
     try {
-        const response = await fetchWithAuth('/api/categories');
+        const response = await FinanceUtils.fetchWithAuth('/api/categories');
         if (!response) return;
 
         if (response.ok) {
@@ -248,7 +248,7 @@ function setupTransactionForm() {
         };
 
         try {
-            const response = await fetchWithAuth('/api/transactions', {
+            const response = await FinanceUtils.fetchWithAuth('/api/transactions', {
                 method: 'POST',
                 body: JSON.stringify(formData)
             });
