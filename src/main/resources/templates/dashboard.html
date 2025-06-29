@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Financeiro - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+<div class="overlay" id="overlay"></div>
+<div class="loading" id="loading">
+    <p>Carregando dados...</p>
+</div>
+
+<div class="header">
+    <div class="menu-icon">☰</div>
+    <div class="user-info">
+        <span class="user-name" id="userName">Carregando...</span>
+        <button class="logout-btn" onclick="logout()">Sair</button>
+    </div>
+</div>
+
+<div class="container">
+    <nav class="sidebar">
+        <h3>Menu</h3>
+        <ul>
+            <li><a href="#" class="active" onclick="showDashboard()">Dashboard</a></li>
+            <li><a href="#" onclick="showTransactions()">Movimentações</a></li>
+            <li><a href="#" onclick="showCategories()">Categorias</a></li>
+            <li><a href="#" onclick="showReports()">Relatórios</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content" id="mainContent">
+        <div id="dashboardView">
+            <h1 class="dashboard-title">Dashboard</h1>
+
+            <div id="loadingMessage" class="loading">Carregando dados...</div>
+
+            <div id="dashboardContent" style="display: none;">
+                <div class="summary-cards">
+                    <div class="summary-card entrada">
+                        <h3>Entradas</h3>
+                        <div class="value" id="totalEntradas">R$ 0,00</div>
+                    </div>
+                    <div class="summary-card saida">
+                        <h3>Saídas</h3>
+                        <div class="value" id="totalSaidas">R$ 0,00</div>
+                    </div>
+                    <div class="summary-card saldo">
+                        <h3>Saldo</h3>
+                        <div class="value" id="saldoAtual">R$ 0,00</div>
+                    </div>
+                </div>
+
+                <div class="charts-section">
+                    <div class="chart-container">
+                        <h3>Movimentações por Categoria</h3>
+                        <canvas id="categoryChart" width="400" height="200"></canvas>
+                    </div>
+
+                    <div class="recent-activities">
+                        <h3>Atividades Recentes</h3>
+                        <div id="recentTransactions">
+                            <!-- Transações recentes serão carregadas aqui -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div class="quick-actions">
+    <button class="quick-action-btn" onclick="openTransactionModal('ENTRADA')" title="Nova Entrada">+</button>
+    <button class="quick-action-btn" onclick="openTransactionModal('SAIDA')" title="Nova Saída">-</button>
+</div>
+
+<!-- Modal para Nova Transação -->
+<div id="transactionModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeTransactionModal()">&times;</span>
+        <h2 id="modalTitle">Nova Transação</h2>
+        <form id="transactionForm">
+            <div class="form-group">
+                <label for="transactionType">Tipo:</label>
+                <select id="transactionType" required>
+                    <option value="ENTRADA">Entrada</option>
+                    <option value="SAIDA">Saída</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="transactionValue">Valor:</label>
+                <input type="number" id="transactionValue" step="0.01" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="transactionDate">Data:</label>
+                <input type="date" id="transactionDate" required>
+            </div>
+            <div class="form-group">
+                <label for="transactionCategory">Categoria:</label>
+                <select id="transactionCategory" required>
+                    <option value="">Selecione uma categoria</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="transactionDescription">Descrição:</label>
+                <textarea id="transactionDescription" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Salvar</button>
+                <button type="button" class="btn btn-secondary" onclick="closeTransactionModal()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="/js/common.js"></script>
+<script src="/js/dashboard.js"></script>
+</body>
+</html>
