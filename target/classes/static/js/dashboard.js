@@ -285,7 +285,7 @@ function showTransactions() {
 }
 
 function showCategories() {
-    alert('Funcionalidade em desenvolvimento');
+    window.location.href = '/categories';
 }
 
 function showReports() {
