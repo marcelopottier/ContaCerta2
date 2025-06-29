@@ -284,6 +284,27 @@ class FinanceUtils {
             }
         });
     }
+
+    // Configurar navbar de acordo com autenticação
+    static initNavbar() {
+        const navButtons = document.getElementById('navButtons');
+        const userInfo = document.querySelector('.user-info');
+        const userNameEl = document.getElementById('userName');
+
+        if (FinanceUtils.isLoggedIn()) {
+            const user = FinanceUtils.getCurrentUser();
+            if (userNameEl && user.name) {
+                userNameEl.textContent = user.name;
+            }
+            if (navButtons) {
+                navButtons.style.display = 'none';
+            }
+        } else {
+            if (userInfo) {
+                userInfo.style.display = 'none';
+            }
+        }
+    }
 }
 
 // Compatibilidade com código anterior
@@ -326,6 +347,9 @@ async function fetchWithAuth(url, options = {}) {
 document.addEventListener('DOMContentLoaded', function() {
     // Limpar dados expirados
     FinanceUtils.clearExpiredData();
+
+    // Inicializar navbar
+    FinanceUtils.initNavbar();
     
     // Verificar se está online
     if (!FinanceUtils.isOnline()) {

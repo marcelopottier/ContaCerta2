@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,13 +13,7 @@
     <p>Verificando autenticação...</p>
 </div>
 
-<div class="header">
-    <div class="logo">💰 Controle Financeiro</div>
-    <div class="nav-buttons" id="navButtons">
-        <a href="/login" class="nav-btn">Entrar</a>
-        <a href="/register" class="nav-btn">Cadastrar</a>
-    </div>
-</div>
+<div th:replace="fragments/navbar :: publicNavbar"></div>
 
 <div class="container">
     <div class="hero-section">

@@ -1,0 +1,33 @@
+<div th:fragment="publicNavbar">
+    <header class="header">
+        <div class="logo">💰 Controle Financeiro</div>
+        <div class="nav-buttons" id="navButtons">
+            <a href="/login" class="nav-btn">Entrar</a>
+            <a href="/register" class="nav-btn">Cadastrar</a>
+        </div>
+    </header>
+</div>
+
+<div th:fragment="privateNavbar">
+    <header class="header">
+        <div class="header-left">
+            <div class="menu-icon">
+                <i class="fas fa-bars"></i>
+            </div>
+            <div class="logo">
+                <i class="fas fa-chart-pie"></i>
+                <span>FinanceControl</span>
+            </div>
+        </div>
+        <div class="user-info">
+            <div class="user-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <span class="user-name" id="userName"></span>
+            <button class="logout-btn" onclick="FinanceUtils.logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                Sair
+            </button>
+        </div>
+    </header>
+</div>
