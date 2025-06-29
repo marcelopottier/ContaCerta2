@@ -25,22 +25,22 @@ function setupRegisterForm() {
         const confirmPassword = document.getElementById('confirmPassword').value;
 
         // Limpar mensagens anteriores
-        hideMessage('errorMessage');
-        hideMessage('successMessage');
+        FinanceUtils.hideMessage('errorMessage');
+        FinanceUtils.hideMessage('successMessage');
 
         // Validações
         if (password !== confirmPassword) {
-            showMessage('errorMessage', 'As senhas não coincidem!', true);
+            FinanceUtils.showMessage('errorMessage', 'As senhas não coincidem!', true);
             return;
         }
 
         if (password.length < 6) {
-            showMessage('errorMessage', 'A senha deve ter pelo menos 6 caracteres!', true);
+            FinanceUtils.showMessage('errorMessage', 'A senha deve ter pelo menos 6 caracteres!', true);
             return;
         }
 
         try {
-            showLoading();
+            FinanceUtils.showLoading();
 
             const response = await fetch('/api/auth/register', {
                 method: 'POST',
@@ -54,7 +54,7 @@ function setupRegisterForm() {
                 })
             });
 
-            hideLoading();
+            FinanceUtils.hideLoading();
 
             if (response.ok) {
                 const data = await response.json();
@@ -64,7 +64,7 @@ function setupRegisterForm() {
                 localStorage.setItem('userEmail', data.email);
                 localStorage.setItem('userName', data.name);
 
-                showMessage('successMessage', 'Cadastro realizado com sucesso!');
+                FinanceUtils.showMessage('successMessage', 'Cadastro realizado com sucesso!');
 
                 // Redirecionar para o dashboard
                 setTimeout(() => {
@@ -72,11 +72,11 @@ function setupRegisterForm() {
                 }, 1000);
             } else {
                 const errorText = await response.text();
-                showMessage('errorMessage', errorText || 'Erro ao fazer cadastro', true);
+                FinanceUtils.showMessage('errorMessage', errorText || 'Erro ao fazer cadastro', true);
             }
         } catch (error) {
-            hideLoading();
-            showMessage('errorMessage', 'Erro de conexão. Tente novamente.', true);
+            FinanceUtils.hideLoading();
+            FinanceUtils.showMessage('errorMessage', 'Erro de conexão. Tente novamente.', true);
         }
     });
 }
