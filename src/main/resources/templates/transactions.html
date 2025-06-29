@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}">
+
+<head>
+    <title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">Transações</title>
+
+    <th:block layout:fragment="css">
+        <style>
+            .transaction-row {
+                transition: all 0.2s ease;
+                cursor: pointer;
+            }
+
+            .transaction-row:hover {
+                background-color: rgba(111, 66, 193, 0.05);
+                transform: translateX(2px);
+            }
+
+            .transaction-type-badge {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.1rem;
+                font-weight: bold;
+            }
+
+            .transaction-income {
+                background-color: rgba(25, 135, 84, 0.1);
+                color: #198754;
+                border: 2px solid rgba(25, 135, 84, 0.2);
+            }
+
+            .transaction-expense {
+                background-color: rgba(220, 53, 69, 0.1);
+                color: #dc3545;
+                border: 2px solid rgba(220, 53, 69, 0.2);
+            }
+
+            .filters-card {
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border: 1px solid #dee2e6;
+            }
+
+            .quick-filter-btn {
+                transition: all 0.2s ease;
+            }
+
+            .quick-filter-btn.active {
+                background-color: var(--primary-color);
+                color: white;
+                border-color: var(--primary-color);
+            }
+
+            .export-dropdown {
+                min-width: 200px;
+            }
+
+            @media (max-width: 768px) {
+                .table-responsive {
+                    font-size: 0.875rem;
+                }
+
+                .d-none-mobile {
+                    display: none !important;
+                }
+
+                .mobile-transaction-card {
+                    margin-bottom: 1rem;
+                    border-left: 4px solid;
+                }
+
+                .mobile-transaction-card.income {
+                    border-left-color: #198754;
+                }
+
+                .mobile-transaction-card.expense {
+                    border-left-color: #dc3545;
+                }
+            }
+        </style>
+    </th:block>
+</head>
+
+<body>
+<div layout:fragment="content">
+    <!-- Page Variables -->
+    <div th:with="pageTitle='Transações',
+                     pageSubtitle='Gerencie todas as suas movimentações financeiras',
+                     breadcrumbs=${#lists.toList({'title': 'Dashboard', 'url': '/dashboard'}, {'title': 'Transações', 'url': '/transactions'})},
+                     pageActions='<button class=&quot;btn btn-primary&quot; data-bs-toggle=&quot;modal&quot; data-bs-target=&quot;#transactionModal&quot;><i class=&quot;bi bi-plus me-1&quot;></i>Nova Transação</button>'">
+
+        <div class="container-fluid">
+            <!-- Summary Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="card text-white" style="background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <div class="h5 mb-0" th:text="${transactionStats?.totalEntradas != null ? #numbers.formatCurrency(transactionStats.totalEntradas) : 'R$ 0,00'}">R$ 0,00</div>
+                                    <div class="small opacity-75">Total Entradas</div>
+                                </div>
+                                <div class="ms-3">
+                                    <i class="bi bi-arrow-up-circle" style="font-size: 2rem; opacity: 0.8;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="card text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <div class="h5 mb-0" th:text="${transactionStats?.totalSaidas != null ? #numbers.formatCurrency(transactionStats.totalSaidas) : 'R$ 0,00'}">R$ 0,00</div>
+                                    <div class="small opacity-75">Total Saídas</div>
+                                </div>
+                                <div class="ms-3">
+                                    <i class="bi bi-arrow-down-circle" style="font-size: 2rem; opacity: 0.8;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="card text-white" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <div class="h5 mb-0" th:text="${transactionStats?.saldo != null ? #numbers.formatCurrency(transactionStats.saldo) : 'R$ 0,00'}">R$ 0,00</div>
+                                    <div class="small opacity-75">Saldo</div>
+                                </div>
+                                <div class="ms-3">
+                                    <i class="bi bi-wallet2" style="font-size: 2rem; opacity: 0.8;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <div class="card text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <div class="h5 mb-0" th:text="${transactionStats?.totalTransacoes ?: 0}">0</div>
+                                    <div class="small opacity-75">Transações</div>
+                                </div>
+                                <div class="ms-3">
+                                    <i class="bi bi-receipt" style="font-size: 2rem; opacity: 0.8;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="card filters-card mb-4">
+                <div class="card-body">
+                    <form th:action="@{/transactions}" method="get" class="row g-3 align-items-end">
+                        <!-- Date Range -->
+                        <div class="col-md-3">
+                            <label for="startDate" class="form-label fw-bold">
+                                <i class="bi bi-calendar me-1"></i>Data Inicial
+                            </label>
+                            <input type="date"
+                                   class="form-control"
+                                   id="startDate"
+                                   name="startDate"
+                                   th:value="${param.startDate}">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="endDate" class="form-label fw-bold">
+                                <i class="bi bi-calendar-check me-1"></i>Data Final
+                            </label>
+                            <input type="date"
+                                   class="form-control"
+                                   id="endDate"
+                                   name="endDate"
+                                   th:value="${param.endDate}">
+                        </div>
+
+                        <!-- Category Filter -->
+                        <div class="col-md-2">
+                            <label for="categoryFilter" class="form-label fw-bold">
+                                <i class="bi bi-tags me-1"></i>Categoria
+                            </label>
+                            <select class="form-select" id="categoryFilter" name="categoryId">
+                                <option value="">Todas</option>
+                                <option th:each="category : ${categories}"
+                                        th:value="${category.id}"
+                                        th:text="${category.name}"
+                                        th:selected="${param.categoryId != null and param.categoryId[0] == category.id.toString()}">
+                                    Categoria
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Type Filter -->
+                        <div class="col-md-2">
+                            <label for="typeFilter" class="form-label fw-bold">
+                                <i class="bi bi-arrow-left-right me-1"></i>Tipo
+                            </label>
+                            <select class="form-select" id="typeFilter" name="type">
+                                <option value="">Todos</option>
+                                <option value="ENTRADA" th:selected="${param.type != null and param.type[0] == 'ENTRADA'}">Entrada</option>
+                                <option value="SAIDA" th:selected="${param.type != null and param.type[0] == 'SAIDA'}">Saída</option>
+                            </select>
+                        </div>
+
+                        <!-- Search -->
+                        <div class="col-md-2">
+                            <label for="search" class="form-label fw-bold">
+                                <i class="bi bi-search me-1"></i>Buscar
+                            </label>
+                            <div class="input-group">
+                                <input type="text"
+                                       class="form-control"
+                                       id="search"
+                                       name="search"
+                                       placeholder="Descrição..."
+                                       th:value="${param.search}">
+                                <button class="btn btn-outline-primary" type="submit">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Quick Filters -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-outline-secondary btn-sm quick-filter-btn" data-filter="today">Hoje</button>
+                                <button class="btn btn-outline-secondary btn-sm quick-filter-btn" data-filter="week">Esta Semana</button>
+                                <button class="btn btn-outline-secondary btn-sm quick-filter-btn" data-filter="month">Este Mês</button>
+                                <button class="btn btn-outline-secondary btn-sm quick-filter-btn" data-filter="year">Este Ano</button>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">
+                                    <i class="bi bi-x me-1"></i>Limpar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions Table -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-list-ul me-2"></i>
+                        Lista de Transações
+                        <span class="badge bg-primary ms-2" th:if="${transactions != null}" th:text="${transactions.totalElements}">0</span>
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <!-- Export Dropdown -->
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle btn-sm"
+                                    type="button"
+                                    data-bs-toggle="dropdown">
+                                <i class="bi bi-download me-1"></i>Exportar
+                            </button>
+                            <ul class="dropdown-menu export-dropdown">
+                                <li><h6 class="dropdown-header">Formato do Arquivo</h6></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportData('excel')">
+                                    <i class="bi bi-file-earmark-excel text-success me-2"></i>Excel (.xlsx)
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportData('csv')">
+                                    <i class="bi bi-file-earmark-text text-primary me-2"></i>CSV (.csv)
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="exportData('pdf')">
+                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>PDF (.pdf)
+                                </a></li>
+                            </ul>
+                        </div>
+
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#transactionModal">
+                            <i class="bi bi-plus me-1"></i>Nova Transação
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <!-- Desktop Table -->
+                    <div class="table-responsive d-none d-md-block">
+                        <table class="table table-hover mb-0" th:if="${transactions != null and !transactions.isEmpty()}">
+                            <thead class="table-light">
+                            <tr>
+                                <th scope="col" style="width: 60px;">Tipo</th>
+                                <th scope="col">
+                                    <a th:href="@{/transactions(sort='date', direction=${sortDirection == 'asc' ? 'desc' : 'asc'})}"
+                                       class="text-decoration-none text-dark">
+                                        Data
+                                        <i th:class="${sortField == 'date' ? (sortDirection == 'asc' ? 'bi bi-arrow-up' : 'bi bi-arrow-down') : 'bi bi-arrow-up-down'}"
+                                           class="ms-1"></i>
+                                    </a>
+                                </th>
+                                <th scope="col">Descrição</th>
+                                <th scope="col">Categoria</th>
+                                <th scope="col" class="text-end">
+                                    <a th:href="@{/transactions(sort='value', direction=${sortDirection == 'asc' ? 'desc' : 'asc'})}"
+                                       class="text-decoration-none text-dark">
+                                        Valor
+                                        <i th:class="${sortField == 'value' ? (sortDirection == 'asc' ? 'bi bi-arrow-up' : 'bi bi-arrow-down') : 'bi bi-arrow-up-down'}"
+                                           class="ms-1"></i>
+                                    </a>
+                                </th>
+                                <th scope="col" style="width: 120px;" class="text-center">Ações</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="transaction : ${transactions.content}"
+                                class="transaction-row"
+                                th:data-id="${transaction.id}">
+                                <td>
+                                    <div th:class="${transaction.type.name() == 'ENTRADA' ? 'transaction-type-badge transaction-income' : 'transaction-type-badge transaction-expense'}">
+                                        <i th:class="${transaction.type.name() == 'ENTRADA' ? 'bi bi-arrow-up' : 'bi bi-arrow-down'}"></i>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span th:text="${#temporals.format(transaction.date, 'dd/MM/yyyy')}">Data</span>
+                                    <br>
+                                    <small class="text-muted" th:text="${#temporals.format(transaction.date, 'EEEE', #locale)}"
+                                           style="text-transform: capitalize;">Dia da semana</small>
+                                </td>
+                                <td>
+                                    <div class="fw-bold" th:text="${transaction.description ?: 'Sem descrição'}">Descrição</div>
+                                    <small class="text-muted" th:if="${transaction.description != null and #strings.length(transaction.description) > 50}">
+                                        <span th:text="${#strings.abbreviate(transaction.description, 50)}">Descrição abreviada</span>
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border" th:text="${transaction.category?.name}">Categoria</span>
+                                </td>
+                                <td class="text-end">
+                                            <span class="fw-bold fs-6"
+                                                  th:classappend="${transaction.type.name() == 'ENTRADA' ? 'text-success' : 'text-danger'}"
+                                                  th:text="${(transaction.type.name() == 'ENTRADA' ? '+' : '-') + #numbers.formatCurrency(transaction.value)}">
+                                                Valor
+                                            </span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-outline-primary btn-sm"
+                                                onclick="editTransaction([[${transaction.id}]])"
+                                                data-bs-toggle="tooltip"
+                                                title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger btn-sm"
+                                                onclick="deleteTransaction([[${transaction.id}]], '[[${transaction.description ?: "Sem descrição"}]]')"
+                                        data-bs-toggle="tooltip"
+                                        title="Excluir">
+                                        <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mobile Cards -->
+                    <div class="d-md-none p-3">
+                        <div th:each="transaction : ${transactions.content}"
+                             th:class="${'card mobile-transaction-card ' + (transaction.type.name() == 'ENTRADA' ? 'income' : 'expense')}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <div th:class="${transaction.type.name() == 'ENTRADA' ? 'transaction-type-badge transaction-income me-3' : 'transaction-type-badge transaction-expense me-3'}">
+                                            <i th:class="${transaction.type.name() == 'ENTRADA' ? 'bi bi-arrow-up' : 'bi bi-arrow-down'}"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold" th:text="${transaction.description ?: 'Sem descrição'}">Descrição</div>
+                                            <small class="text-muted" th:text="${#temporals.format(transaction.date, 'dd/MM/yyyy')}">Data</small>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item" href="#" th:onclick="'editTransaction(' + ${transaction.id} + ')'">
+                                                <i class="bi bi-pencil me-2"></i>Editar
+                                            </a></li>
+                                            <li><a class="dropdown-item text-danger" href="#"
+                                                   th:onclick="'deleteTransaction(' + ${transaction.id} + ', \'' + ${transaction.description ?: 'Sem descrição'} + '\')'">
+                                                <i class="bi bi-trash me-2"></i>Excluir
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-light text-dark" th:text="${transaction.category?.name}">Categoria</span>
+                                    <span class="fw-bold"
+                                          th:classappend="${transaction.type.name() == 'ENTRADA' ? 'text-success' : 'text-danger'}"
+                                          th:text="${(transaction.type.name() == 'ENTRADA' ? '+' : '-') + #numbers.formatCurrency(transaction.value)}">
+                                            Valor
+                                        </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div th:if="${transactions == null or transactions.isEmpty()}"
+                         class="text-center py-5">
+                        <i class="bi bi-receipt text-muted" style="font-size: 4rem;"></i>
+                        <h4 class="text-muted mt-3">Nenhuma transação encontrada</h4>
+                        <p class="text-muted">Adicione algumas transações ou ajuste os filtros</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transactionModal">
+                            <i class="bi bi-plus me-1"></i>Adicionar primeira transação
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div th:if="${transactions != null and transactions.totalPages > 1}" class="card-footer">
+                    <nav aria-label="Navegação de páginas">
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            <li class="page-item" th:classappend="${transactions.first} ? 'disabled'">
+                                <a class="page-link" th:href="@{/transactions(page=${transactions.number - 1}, size=${transactions.size})}">
+                                    <i class="bi bi-chevron-left"></i> Anterior
+                                </a>
+                            </li>
+
+                            <li th:each="pageNum : ${#numbers.sequence(0, transactions.totalPages - 1)}"
+                                class="page-item"
+                                th:classappend="${pageNum == transactions.number} ? 'active'">
+                                <a class="page-link"
+                                   th:href="@{/transactions(page=${pageNum}, size=${transactions.size})}"
+                                   th:text="${pageNum + 1}">1</a>
+                            </li>
+
+                            <li class="page-item" th:classappend="${transactions.last} ? 'disabled'">
+                                <a class="page-link" th:href="@{/transactions(page=${transactions.number + 1}, size=${transactions.size})}">
+                                    Próxima <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Modal -->
+        <div th:replace="~{fragments/transaction-modal :: transaction-modal}"></div>
+
+        <!-- Category Modal for Quick Add -->
+        <div th:replace="~{fragments/transaction-modal :: category-modal}"></div>
+
+        <!-- Confirm Delete Modal -->
+        <div th:replace="~{fragments/components :: confirm-modal}"></div>
+    </div>
+</div>
+
+<th:block layout:fragment="javascript">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setupQuickFilters();
+            setupTableInteractions();
+        });
+
+        function setupQuickFilters() {
+            document.querySelectorAll('.quick-filter-btn[data-filter]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const filter = this.dataset.filter;
+                    const now = new Date();
+                    let startDate, endDate;
+
+                    switch(filter) {
+                        case 'today':
+                            startDate = endDate = now.toISOString().split('T')[0];
+                            break;
+                        case 'week':
+                            const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+                            const weekEnd = new Date(now.setDate(now.getDate() - now.getDay() + 6));
+                            startDate = weekStart.toISOString().split('T')[0];
+                            endDate = weekEnd.toISOString().split('T')[0];
+                            break;
+                        case 'month':
+                            startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+                            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+                            break;
+                        case 'year':
+                            startDate = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+                            endDate = new Date(now.getFullYear(), 11, 31).toISOString().split('T')[0];
+                            break;
+                    }
+
+                    document.getElementById('startDate').value = startDate;
+                    document.getElementById('endDate').value = endDate;
+
+                    // Mark as active
+                    document.querySelectorAll('.quick-filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Submit form
+                    document.querySelector('.filters-card form').submit();
+                });
+            });
+        }
+
+        function setupTableInteractions() {
+            // Row click to edit
+            document.querySelectorAll('.transaction-row').forEach(row => {
+                row.addEventListener('click', function(e) {
+                    if (!e.target.closest('button')) {
+                        const id = this.dataset.id;
+                        editTransaction(id);
+                    }
+                });
+            });
+        }
+
+        function clearFilters() {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('search').value = '';
+
+            document.querySelectorAll('.quick-filter-btn').forEach(btn => btn.classList.remove('active'));
+
+            window.location.href = '/transactions';
+        }
+
+        async function editTransaction(id) {
+            try {
+                const response = await FinanceApp.http.get(`/api/transactions/${id}`);
+                if (response && response.ok) {
+                    const transaction = await response.json();
+
+                    // Fill modal with transaction data
+                    const modal = document.getElementById('transactionModal');
+                    modal.querySelector('#transactionId').value = transaction.id;
+                    modal.querySelector('#transactionValue').value = transaction.value;
+                    modal.querySelector('#transactionDate').value = transaction.date;
+                    modal.querySelector('#transactionDescription').value = transaction.description || '';
+                    modal.querySelector('#transactionCategory').value = transaction.categoryId;
+
+                    // Set transaction type
+                    const typeRadio = modal.querySelector(`input[name="type"][value="${transaction.type}"]`);
+                    if (typeRadio) typeRadio.checked = true;
+
+                    // Update modal title
+                    modal.querySelector('#modalTitleText').textContent = 'Editar Transação';
+
+                    // Show modal
+                    new bootstrap.Modal(modal).show();
+                }
+            } catch (error) {
+                FinanceApp.ui.showAlert('Erro ao carregar transação', 'danger');
+            }
+        }
+
+        function deleteTransaction(id, description) {
+            FinanceApp.ui.showConfirmModal(
+                `Tem certeza que deseja excluir a transação "${description}"?`,
+                async function() {
+                    try {
+                        const response = await FinanceApp.http.delete(`/api/transactions/${id}`);
+
+                        if (response && response.ok) {
+                            FinanceApp.ui.showAlert('Transação excluída com sucesso!', 'success');
+                            setTimeout(() => window.location.reload(), 1000);
+                        } else {
+                            const error = await response.text();
+                            FinanceApp.ui.showAlert('Erro ao excluir transação: ' + error, 'danger');
+                        }
+                    } catch (error) {
+                        FinanceApp.ui.showAlert('Erro de conexão. Tente novamente.', 'danger');
+                    }
+                },
+                'Excluir Transação'
+            );
+        }
+
+        function exportData(format) {
+            const params = new URLSearchParams(window.location.search);
+            params.append('export', format);
+
+            window.open(`/transactions/export?${params.toString()}`, '_blank');
+        }
+    </script>
+
+    <!-- Include transaction modal script -->
+    <script th:replace="~{fragments/transaction-modal :: transaction-modal-js}"></script>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!-- Breadcrumb Fragment -->
+<nav th:fragment="breadcrumb" class="container mt-3" th:if="${breadcrumbs}">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white rounded p-3 shadow-sm">
+            <li th:each="breadcrumb, iterStat : ${breadcrumbs}"
+                th:class="${iterStat.last} ? 'breadcrumb-item active' : 'breadcrumb-item'">
+                <a th:if="${!iterStat.last}" th:href="${breadcrumb.url}" th:text="${breadcrumb.title}"></a>
+                <span th:if="${iterStat.last}" th:text="${breadcrumb.title}"></span>
+            </li>
+        </ol>
+    </nav>
+</nav>
+
+<!-- Page Header Fragment -->
+<div th:fragment="page-header" class="container my-4" th:if="${pageTitle}">
+    <div class="row">
+        <div class="col">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1 fw-bold text-dark" th:text="${pageTitle}">Título da Página</h1>
+                    <p class="text-muted mb-0" th:if="${pageSubtitle}" th:text="${pageSubtitle}">Subtítulo da página</p>
+                </div>
+                <div th:if="${pageActions}">
+                    <div th:utext="${pageActions}">
+                        <!-- Actions buttons will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr class="my-4">
+</div>
+
+<!-- Alerts Fragment -->
+<div th:fragment="alerts" class="container">
+    <!-- Success Alert -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${successMessage}">Operação realizada com sucesso!</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Error Alert -->
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span th:text="${errorMessage}">Ocorreu um erro!</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Info Alert -->
+    <div th:if="${infoMessage}" class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        <span th:text="${infoMessage}">Informação</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Warning Alert -->
+    <div th:if="${warningMessage}" class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span th:text="${warningMessage}">Atenção!</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+
+<!-- Footer Fragment -->
+<footer th:fragment="footer" class="bg-dark text-light py-4 mt-auto">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="fw-bold">FinanceControl</h6>
+                <p class="text-muted small mb-0">Sistema de controle financeiro pessoal</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <p class="text-muted small mb-0">
+                    © 2024 Univille. Desenvolvido por Ian Sergio, Marcelo Pottier e Pedro Hideki.
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Loading Spinner Fragment -->
+<div th:fragment="loading-spinner" class="d-flex justify-content-center align-items-center" style="min-height: 200px;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+</div>
+
+<!-- Empty State Fragment -->
+<div th:fragment="empty-state" class="text-center py-5">
+    <div class="mb-4">
+        <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+    </div>
+    <h4 class="text-muted mb-3" th:text="${emptyTitle ?: 'Nenhum item encontrado'}">Nenhum item encontrado</h4>
+    <p class="text-muted mb-4" th:text="${emptyMessage ?: 'Não há dados para exibir no momento.'}">
+        Não há dados para exibir no momento.
+    </p>
+    <div th:if="${emptyAction}">
+        <div th:utext="${emptyAction}">
+            <!-- Action button will be inserted here -->
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal Fragment -->
+<div th:fragment="confirm-modal" class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                    Confirmar ação
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmModalMessage">Tem certeza que deseja realizar esta ação?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmModalButton">
+                    <i class="bi bi-check-circle me-1"></i>Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</html>

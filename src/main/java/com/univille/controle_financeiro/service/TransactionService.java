@@ -7,7 +7,13 @@ import com.univille.controle_financeiro.entity.TransactionType;
 import com.univille.controle_financeiro.entity.User;
 import com.univille.controle_financeiro.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+
+import java.awt.print.Pageable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -125,4 +131,55 @@ public class TransactionService {
                 transaction.getCategory().getName()
         );
     }
+    /*
+    public Page<TransactionResponse> findTransactionsWithFilters(User user,
+                                                                 LocalDate startDate,
+                                                                 LocalDate endDate,
+                                                                 Long categoryId,
+                                                                 String type,
+                                                                 String search,
+                                                                 Pageable pageable) {
+
+        // Criar especificação dinâmica para filtros
+        Specification<Transaction> spec = Specification.where(null);
+
+        // Filtro por usuário (sempre obrigatório)
+        spec = spec.and((root, query, cb) -> cb.equal(root.get("user"), user));
+
+        // Filtro por período
+        if (startDate != null) {
+            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("date"), startDate));
+        }
+        if (endDate != null) {
+            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("date"), endDate));
+        }
+
+        // Filtro por categoria
+        if (categoryId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("category").get("id"), categoryId));
+        }
+
+        // Filtro por tipo
+        if (type != null && !type.isEmpty()) {
+            TransactionType transactionType = TransactionType.valueOf(type.toUpperCase());
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("type"), transactionType));
+        }
+
+        // Filtro por descrição
+        if (search != null && !search.trim().isEmpty()) {
+            spec = spec.and((root, query, cb) ->
+                    cb.like(cb.lower(root.get("description")), "%" + search.toLowerCase() + "%"));
+        }
+
+        // Aplicar ordenação
+        Sort sort = pageable.getSort();
+        if (sort.isUnsorted()) {
+            sort = Sort.by(Sort.Direction.DESC, "date");
+            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+        }
+
+        Page<Transaction> transactions = transactionRepository.findAll(spec, pageable);
+
+        return transactions.map(this::convertToResponse);
+    }*/
 }

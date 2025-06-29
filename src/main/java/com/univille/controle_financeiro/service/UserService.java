@@ -52,4 +52,36 @@ public class UserService implements UserDetailsService {
     public boolean checkPassword(User user, String password) {
         return passwordEncoder.matches(password, user.getPasswordHash());
     }
+
+    public User updateUser(User user) {
+        if (user.getId() == null) {
+            throw new RuntimeException("ID do usuário é obrigatório para atualização");
+        }
+
+        User existingUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        // Verificar se o email já está em uso por outro usuário
+        if (!existingUser.getEmail().equals(user.getEmail()) &&
+                userRepository.existsByEmail(user.getEmail())) {
+            throw new RuntimeException("Email já está em uso");
+        }
+
+        existingUser.setName(user.getName());
+        existingUser.setEmail(user.getEmail());
+
+        return userRepository.save(existingUser);
+    }
+    public void changePassword(User user, String currentPassword, String newPassword) {
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new RuntimeException("Senha atual incorreta");
+        }
+
+        if (newPassword.length() < 6) {
+            throw new RuntimeException("Nova senha deve ter pelo menos 6 caracteres");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
 }
