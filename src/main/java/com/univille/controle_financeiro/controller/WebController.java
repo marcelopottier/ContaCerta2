@@ -25,4 +25,9 @@ public class WebController {
     public String dashboard() {
         return "dashboard";
     }
+
+    @GetMapping("/categories")
+    public String categories() {
+        return "categories";
+    }
 }
