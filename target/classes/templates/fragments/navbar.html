@@ -1,30 +1,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 
-<!-- Public Navbar (Login/Register pages) -->
-<nav th:fragment="navbar-public" class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
-    <div class="container">
-        <a class="navbar-brand fw-bold" th:href="@{/}">
-            <i class="bi bi-graph-up-arrow me-2"></i>FinanceControl
-        </a>
-
-        <div class="navbar-nav ms-auto">
-            <a class="nav-link me-2" th:href="@{/login}">
-                <i class="bi bi-box-arrow-in-right me-1"></i>Entrar
-            </a>
-            <a class="nav-link" th:href="@{/register}">
-                <i class="bi bi-person-plus me-1"></i>Cadastrar
-            </a>
-        </div>
-    </div>
-</nav>
-
 <!-- Private Navbar (Authenticated pages) -->
 <nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
     <div class="container-fluid">
         <!-- Brand -->
         <a class="navbar-brand fw-bold" th:href="@{/dashboard}">
-            <i class="bi bi-graph-up-arrow me-2"></i>FinanceControl
+            <i class="bi bi-graph-up-arrow me-2"></i>ContaCerta
         </a>
 
         <!-- Mobile menu button -->
@@ -56,10 +38,15 @@
             <ul class="navbar-nav">
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
-                        <div class="avatar bg-white text-primary rounded-circle me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                            <i class="bi bi-person-fill"></i>
+                        <div id="navAvatarContainer" class="avatar bg-white text-primary rounded-circle me-2 d-flex align-items-center justify-content-center"
+                             th:attr="data-avatar-file=${avatarFile}" style="width: 32px; height: 32px; overflow:hidden;">
+                            <!-- Avatar Image -->
+                            <img id="navAvatarImg" src="" alt="Avatar"
+                                 style="display:none; width:100%; height:100%; object-fit:cover;" />
+                            <!-- Placeholder Icon -->
+                            <i id="navAvatarIcon" class="bi bi-person-fill" th:if="${avatarFile == null}"></i>
                         </div>
-                        <span th:text="${userName ?: 'Usuário'}">Usuário</span>
+                        <span th:text="${user.name}">Usuário</span>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
@@ -80,4 +67,36 @@
     </div>
 </nav>
 
-</html>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getStorage, ref as storageRef, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyACq-bGXIZOxulg8A8ze26UOVW4n5CCK0A",
+            authDomain: "reactchat-74e4b.firebaseapp.com",
+            projectId: "reactchat-74e4b",
+            storageBucket: "reactchat-74e4b.appspot.com",
+            messagingSenderId: "634807544486",
+            appId: "1:634807544486:web:c1106a9c760ea4f1c6e267"
+        };
+    const app = initializeApp(firebaseConfig);
+    const storage = getStorage(app);
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const container = document.getElementById('navAvatarContainer');
+        const fileName = container.dataset.avatarFile;
+        console.log(fileName);
+        if (fileName) {
+            try {
+                const avatarReference = storageRef(storage, `avatars/${fileName}`);
+                const url = await getDownloadURL(avatarReference);
+                const img = document.getElementById('navAvatarImg');
+                img.src = url;
+                img.style.display = 'block';
+                document.getElementById('navAvatarIcon').style.display = 'none';
+            } catch (e) {
+                console.warn('Avatar não encontrado no navbar:', e);
+            }
+        }
+    });
+</script>

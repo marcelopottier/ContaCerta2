@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+
+<!-- Footer Fragment -->
+<footer th:fragment="footer" class="footer">
+    <div class="container-fluid">
+        <div class="row g-4">
+            <!-- Brand Section -->
+            <div class="col-lg-4 col-md-6">
+                <div class="footer-brand">
+                    <h5 class="brand-title">
+                        <i class="bi bi-graph-up-arrow me-2"></i>
+                        FinanceControl
+                    </h5>
+                    <p class="brand-description">
+                        Sua plataforma completa para controle financeiro pessoal.
+                        Gerencie suas finanças de forma simples e inteligente.
+                    </p>
+                    <div class="social-links">
+                        <a href="#" class="social-link" title="Facebook">
+                            <i class="bi bi-facebook"></i>
+                        </a>
+                        <a href="#" class="social-link" title="Twitter">
+                            <i class="bi bi-twitter"></i>
+                        </a>
+                        <a href="#" class="social-link" title="LinkedIn">
+                            <i class="bi bi-linkedin"></i>
+                        </a>
+                        <a href="#" class="social-link" title="Instagram">
+                            <i class="bi bi-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="col-lg-2 col-md-6">
+                <div class="footer-section">
+                    <h6 class="footer-title">Navegação</h6>
+                    <ul class="footer-links">
+                        <li><a th:href="@{/dashboard}">Dashboard</a></li>
+                        <li><a th:href="@{/transactions}">Transações</a></li>
+                        <li><a th:href="@{/categories}">Categorias</a></li>
+                        <li><a th:href="@{/profile}">Meu Perfil</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Resources -->
+            <div class="col-lg-2 col-md-6">
+                <div class="footer-section">
+                    <h6 class="footer-title">Recursos</h6>
+                    <ul class="footer-links">
+                        <li><a href="#" onclick="showHelpModal()">Central de Ajuda</a></li>
+                        <li><a href="#" onclick="showTutorialModal()">Como Usar</a></li>
+                        <li><a href="#" onclick="exportAllData()">Exportar Dados</a></li>
+                        <li><a href="#" onclick="showShortcutsModal()">Atalhos</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Legal -->
+            <div class="col-lg-2 col-md-6">
+                <div class="footer-section">
+                    <h6 class="footer-title">Legal</h6>
+                    <ul class="footer-links">
+                        <li><a href="#" onclick="showPrivacyModal()">Privacidade</a></li>
+                        <li><a href="#" onclick="showTermsModal()">Termos de Uso</a></li>
+                        <li><a href="#" onclick="showSecurityModal()">Segurança</a></li>
+                        <li><a href="#" onclick="showContactModal()">Contato</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Contact Info -->
+            <div class="col-lg-2 col-md-12">
+                <div class="footer-section">
+                    <h6 class="footer-title">Contato</h6>
+                    <div class="contact-info">
+                        <div class="contact-item">
+                            <i class="bi bi-envelope"></i>
+                            <span>contato@financecontrol.com</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="bi bi-telephone"></i>
+                            <span>(11) 9999-9999</span>
+                        </div>
+                        <div class="contact-item">
+                            <i class="bi bi-clock"></i>
+                            <span>24/7 Online</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Bottom -->
+        <div class="footer-bottom">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="copyright">
+                        &copy; <span th:text="${#dates.year(#dates.createNow())}">2024</span> FinanceControl.
+                        Todos os direitos reservados.
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <div class="footer-meta">
+                        <span class="version">
+                            <i class="bi bi-code-square me-1"></i>
+                            Versão 1.0.0
+                        </span>
+                        <span class="status online">
+                            <i class="bi bi-circle-fill me-1"></i>
+                            Sistema Online
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Modals para Footer -->
+<div th:fragment="footer-modals">
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-question-circle me-2"></i>Central de Ajuda
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="help-card">
+                                <i class="bi bi-play-circle help-icon"></i>
+                                <h6>Primeiros Passos</h6>
+                                <p>Aprenda como começar a usar o FinanceControl</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="help-card">
+                                <i class="bi bi-plus-circle help-icon"></i>
+                                <h6>Adicionar Transações</h6>
+                                <p>Como registrar suas entradas e saídas</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="help-card">
+                                <i class="bi bi-tags help-icon"></i>
+                                <h6>Gerenciar Categorias</h6>
+                                <p>Organize suas transações por categoria</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="help-card">
+                                <i class="bi bi-graph-up help-icon"></i>
+                                <h6>Relatórios</h6>
+                                <p>Visualize gráficos e relatórios detalhados</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shortcuts Modal -->
+    <div class="modal fade" id="shortcutsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-keyboard me-2"></i>Atalhos do Teclado
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="shortcut-list">
+                        <div class="shortcut-item">
+                            <kbd>Ctrl + N</kbd>
+                            <span>Nova Transação</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl + D</kbd>
+                            <span>Dashboard</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl + T</kbd>
+                            <span>Transações</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl + C</kbd>
+                            <span>Categorias</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl + P</kbd>
+                            <span>Perfil</span>
+                        </div>
+                        <div class="shortcut-item">
+                            <kbd>Ctrl + /</kbd>
+                            <span>Buscar</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Modal -->
+    <div class="modal fade" id="contactModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-envelope me-2"></i>Entre em Contato
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="contactForm">
+                        <div class="mb-3">
+                            <label for="contactName" class="form-label">Nome</label>
+                            <input type="text" class="form-control" id="contactName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="contactEmail" class="form-label">E-mail</label>
+                            <input type="email" class="form-control" id="contactEmail" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="contactSubject" class="form-label">Assunto</label>
+                            <select class="form-select" id="contactSubject" required>
+                                <option value="">Selecione um assunto</option>
+                                <option value="support">Suporte Técnico</option>
+                                <option value="bug">Reportar Bug</option>
+                                <option value="feature">Sugestão de Funcionalidade</option>
+                                <option value="other">Outro</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="contactMessage" class="form-label">Mensagem</label>
+                            <textarea class="form-control" id="contactMessage" rows="4" required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="sendContactForm()">
+                        <i class="bi bi-send me-1"></i>Enviar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer Styles -->
+<style th:fragment="footer-styles">
+    .footer {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border-top: 1px solid #e2e8f0;
+        padding: 3rem 0 1rem;
+        margin-top: auto;
+        color: #64748b;
+    }
+
+    .footer-brand .brand-title {
+        color: #1e293b;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        font-size: 1.25rem;
+    }
+
+    .footer-brand .brand-description {
+        font-size: 0.9rem;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        color: #64748b;
+    }
+
+    .social-links {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .social-link {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .social-link:hover {
+        background: #8b5cf6;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
+    }
+
+    .footer-section .footer-title {
+        color: #1e293b;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        font-size: 1rem;
+    }
+
+    .footer-links {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .footer-links li {
+        margin-bottom: 0.5rem;
+    }
+
+    .footer-links a {
+        color: #64748b;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: inline-block;
+    }
+
+    .footer-links a:hover {
+        color: #8b5cf6;
+        transform: translateX(3px);
+    }
+
+    .contact-info .contact-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .contact-info .contact-item i {
+        width: 20px;
+        margin-right: 0.75rem;
+        color: #8b5cf6;
+    }
+
+    .footer-bottom {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .copyright {
+        margin: 0;
+        font-size: 0.875rem;
+        color: #64748b;
+    }
+
+    .footer-meta {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        font-size: 0.875rem;
+    }
+
+    .footer-meta .version {
+        color: #64748b;
+    }
+
+    .footer-meta .status.online {
+        color: #10b981;
+    }
+
+    .footer-meta .status.online i {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    /* Modal Styles */
+    .help-card {
+        text-align: center;
+        padding: 1.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.75rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .help-card:hover {
+        border-color: #8b5cf6;
+        background: #f8fafc;
+    }
+
+    .help-icon {
+        font-size: 2rem;
+        color: #8b5cf6;
+        margin-bottom: 0.75rem;
+    }
+
+    .help-card h6 {
+        color: #1e293b;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .help-card p {
+        color: #64748b;
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    .shortcut-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .shortcut-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: #f8fafc;
+        border-radius: 0.5rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .shortcut-item kbd {
+        background: #1e293b;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .footer {
+            padding: 2rem 0 1rem;
+        }
+
+        .footer-meta {
+            justify-content: flex-start;
+            margin-top: 1rem;
+        }
+
+        .social-links {
+            justify-content: center;
+        }
+    }
+</style>
+
+<!-- Footer JavaScript -->
+<script th:fragment="footer-scripts">
+    // Footer functionality
+    function showHelpModal() {
+        new bootstrap.Modal(document.getElementById('helpModal')).show();
+    }
+
+    function showShortcutsModal() {
+        new bootstrap.Modal(document.getElementById('shortcutsModal')).show();
+    }
+
+    function showContactModal() {
+        new bootstrap.Modal(document.getElementById('contactModal')).show();
+    }
+
+    function showTutorialModal() {
+        alert('Tutorial em desenvolvimento!');
+    }
+
+    function showPrivacyModal() {
+        alert('Política de Privacidade será exibida aqui.');
+    }
+
+    function showTermsModal() {
+        alert('Termos de Uso serão exibidos aqui.');
+    }
+
+    function showSecurityModal() {
+        alert('Informações de Segurança serão exibidas aqui.');
+    }
+
+    function exportAllData() {
+        alert('Exportação de dados iniciada!');
+    }
+
+    function sendContactForm() {
+        const form = document.getElementById('contactForm');
+        if (form.checkValidity()) {
+            alert('Mensagem enviada com sucesso! Responderemos em breve.');
+            bootstrap.Modal.getInstance(document.getElementById('contactModal')).hide();
+            form.reset();
+        } else {
+            form.classList.add('was-validated');
+        }
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey) {
+            switch(e.key) {
+                case 'n':
+                    e.preventDefault();
+                    // Open new transaction modal
+                    break;
+                case 'd':
+                    e.preventDefault();
+                    window.location.href = '/dashboard';
+                    break;
+                case 't':
+                    e.preventDefault();
+                    window.location.href = '/transactions';
+                    break;
+                case 'c':
+                    e.preventDefault();
+                    window.location.href = '/categories';
+                    break;
+                case 'p':
+                    e.preventDefault();
+                    window.location.href = '/profile';
+                    break;
+            }
+        }
+    });
+</script>
+</html>

@@ -268,28 +268,60 @@ body {
 }
 
 /* =========================================
-   MODALS
+   MODALS - FIXED SECTION
    ========================================= */
 
 .modal-content {
     border-radius: var(--border-radius);
-    border: none;
+    /* Removido: border: none; - Mantém as bordas padrão do Bootstrap */
     box-shadow: var(--box-shadow-lg);
+    background-color: #ffffff !important; /* Força background branco */
+    color: #212529 !important; /* Força texto escuro */
 }
 
 .modal-header {
-    background-color: var(--light-color);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    background-color: #f8f9fa !important; /* Força background claro */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125) !important;
+    color: #212529 !important; /* Força texto escuro */
 }
 
 .modal-title {
     font-weight: 600;
-    color: var(--dark-color);
+    color: #212529 !important; /* Força cor escura */
+}
+
+.modal-body {
+    background-color: #ffffff !important; /* Força background branco */
+    color: #212529 !important; /* Força texto escuro */
+    padding: 1.5rem !important; /* Garante padding adequado */
 }
 
 .modal-footer {
-    background-color: var(--light-color);
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    background-color: #f8f9fa !important; /* Força background claro */
+    border-top: 1px solid rgba(0, 0, 0, 0.125) !important;
+    color: #212529 !important; /* Força texto escuro */
+}
+
+/* Garantir que texto dentro do modal seja sempre visível */
+.modal-content * {
+    color: inherit !important;
+}
+
+.modal-content .text-muted {
+    color: #6c757d !important;
+}
+
+/* Fix para botões dentro do modal */
+.modal-content .btn-secondary {
+    background-color: #6c757d !important;
+    border-color: #6c757d !important;
+    color: #ffffff !important;
+}
+
+.modal-content .btn-danger {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: #ffffff !important;
 }
 
 /* =========================================
@@ -470,8 +502,11 @@ body {
 }
 
 /* =========================================
-   DARK MODE SUPPORT (Optional)
+   DARK MODE SUPPORT - COMMENTED OUT FOR NOW
    ========================================= */
+
+/*
+REMOVIDO TEMPORARIAMENTE - Pode estar causando problemas nos modais
 
 @media (prefers-color-scheme: dark) {
     :root {
@@ -479,6 +514,7 @@ body {
         --dark-color: #f8f9fa;
     }
 }
+*/
 
 /* =========================================
    PRINT STYLES

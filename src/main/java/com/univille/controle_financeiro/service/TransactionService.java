@@ -42,6 +42,10 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
+    public Optional<Transaction> findByIdAndUser(Long id, User user) {
+        return transactionRepository.findByIdAndUser(id, user);
+    }
+
     public Transaction createTransaction(TransactionType type, BigDecimal value, LocalDate date,
                                          String description, User user, Category category) {
         Transaction transaction = new Transaction();

@@ -34,6 +34,16 @@ public class WebController {
     @Autowired
     private TransactionService transactionService;
 
+    @ModelAttribute
+    public void addUserToModel(Model model, Authentication auth) {
+        if (auth != null && auth.isAuthenticated()) {
+            userService.findByEmail(auth.getName()).ifPresent(user -> {
+                model.addAttribute("user", user);
+                model.addAttribute("avatarFile", user.getAvatarFileName());
+            });
+        }
+    }
+
     /**
      * Página inicial - pública
      */
@@ -165,20 +175,16 @@ public class WebController {
         try {
             User user = getCurrentUser(authentication);
 
-            // Aplicar filtros padrão
             if (startDate == null && endDate == null) {
                 LocalDate now = LocalDate.now();
                 startDate = now.withDayOfMonth(1);
                 endDate = now.withDayOfMonth(now.lengthOfMonth());
             }
 
-            // Carregar transações (implementar filtros se necessário)
             var transactions = transactionService.findByUserAndPeriod(user, startDate, endDate);
-            model.addAttribute("transactions", transactions);
 
-            // Estatísticas das transações
-            Map<String, Object> stats = getTransactionStats(user, startDate, endDate);
-            model.addAttribute("transactionStats", stats);
+            model.addAttribute("transactions", createMockPagedTransactions(transactions));
+
 
             // Carregar categorias para filtros
             model.addAttribute("categories", categoryService.findByUser(user));
@@ -198,30 +204,6 @@ public class WebController {
 
         } catch (Exception e) {
             model.addAttribute("errorMessage", "Erro ao carregar transações: " + e.getMessage());
-            return "error";
-        }
-    }
-
-    /**
-     * Página de perfil - requer autenticação JWT
-     */
-    @GetMapping("/profile")
-    public String profile(Model model, Authentication authentication) {
-        try {
-            User user = getCurrentUser(authentication);
-
-            model.addAttribute("user", user);
-
-            // Estatísticas do usuário
-            Map<String, Object> userStats = getUserStats(user);
-            model.addAttribute("userStats", userStats);
-
-            model.addAttribute("userName", user.getName());
-
-            return "profile";
-
-        } catch (Exception e) {
-            model.addAttribute("errorMessage", "Erro ao carregar perfil: " + e.getMessage());
             return "error";
         }
     }
@@ -250,6 +232,7 @@ public class WebController {
         return "error";
     }
 
+    // Métodos privados auxiliares
 
     private User getCurrentUser(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -301,6 +284,20 @@ public class WebController {
 
         var categories = categoryService.findByUser(user);
         stats.put("totalCategorias", categories.size());
+        stats.put("categoriasComTransacoes", categories.stream()
+                .mapToInt(c -> c.getTransactions() != null ? c.getTransactions().size() : 0)
+                .sum());
+        stats.put("totalTransacoes", categories.stream()
+                .mapToInt(c -> c.getTransactions() != null ? c.getTransactions().size() : 0)
+                .sum());
+
+        // Categoria mais usada
+        var maiorCategoria = categories.stream()
+                .filter(c -> c.getTransactions() != null && !c.getTransactions().isEmpty())
+                .max((c1, c2) -> Integer.compare(c1.getTransactions().size(), c2.getTransactions().size()))
+                .map(c -> c.getName())
+                .orElse("N/A");
+        stats.put("maiorCategoria", maiorCategoria);
 
         return stats;
     }
@@ -334,6 +331,25 @@ public class WebController {
         var categories = categoryService.findByUser(user);
         stats.put("totalCategorias", categories.size());
 
+        // Estatísticas adicionais
+        stats.put("transacoesMes", allTransactions.size()); // Simplificado
+        stats.put("categoriaMaisUsada", "Geral"); // Simplificado
+        stats.put("ultimoAcesso", LocalDate.now());
+        stats.put("diasAtivo", 30); // Simplificado
+
         return stats;
+    }
+
+    private Object createMockPagedTransactions(java.util.List<?> transactions) {
+        return new Object() {
+            public java.util.List<?> getContent() { return transactions; }
+            public boolean isEmpty() { return transactions.isEmpty(); }
+            public int getTotalElements() { return transactions.size(); }
+            public int getTotalPages() { return 1; }
+            public boolean isFirst() { return true; }
+            public boolean isLast() { return true; }
+            public int getNumber() { return 0; }
+            public int getSize() { return transactions.size(); }
+        };
     }
 }

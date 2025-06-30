@@ -23,6 +23,10 @@ public class Category {
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Transaction> transactions;
 
+    @Column(length = 7)
+    private String color;
+
+
     // Constructors
     public Category() {}
 
@@ -40,6 +44,10 @@ public class Category {
 
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+
+    public String getColor() { return color; }
+
+    public void setColor(String color) { this.color = color; }
 
     public List<Transaction> getTransactions() { return transactions; }
     public void setTransactions(List<Transaction> transactions) { this.transactions = transactions; }

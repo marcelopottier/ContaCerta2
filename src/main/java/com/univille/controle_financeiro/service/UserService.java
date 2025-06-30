@@ -84,4 +84,11 @@ public class UserService implements UserDetailsService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
+
+    public void updateAvatar(String email, String fileName) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
+        user.setAvatarFileName(fileName);
+        userRepository.save(user);
+    }
 }

@@ -9,11 +9,12 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     List<Transaction> findByUserOrderByDateDesc(User user);
-
+    Optional<Transaction> findByIdAndUser(Long id, User user);
     List<Transaction> findByUserAndDateBetweenOrderByDateDesc(User user, LocalDate startDate, LocalDate endDate);
 
     @Query("SELECT SUM(t.value) FROM Transaction t WHERE t.user = :user AND t.type = :type")

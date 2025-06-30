@@ -3,34 +3,95 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
-    <title th:text="${pageTitle} + ' - FinanceControl'">FinanceControl</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">FinanceControl</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link th:href="@{/css/main.css}" rel="stylesheet">
+    <!-- Chart.js for dashboards -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Page specific CSS -->
+    <th:block layout:fragment="css"></th:block>
+    <style th:replace="~{fragments/transaction-modal :: transaction-modal-styles}"></style>
 </head>
 <body class="bg-light">
-<!-- Navbar oculta em rotas públicas -->
+<!-- Navbar (hidden on public routes) -->
 <nav th:if="${!(currentPath == '/' or currentPath == '/login' or currentPath == '/register')}"
      th:replace="~{fragments/navbar :: navbar}"></nav>
 
+<!-- Main Content -->
 <main class="main-content">
-    <!-- Breadcrumb -->
-    <div th:replace="~{fragments/breadcrumb :: breadcrumb(
-                       breadcrumbs=${breadcrumbs},
-                       pageTitle=${pageTitle},
-                       pageSubtitle=${pageSubtitle}
-                     )}"></div>
-
-    <!-- Page Header -->
-    <div th:replace="~{fragments/page-header :: page-header(
-                       pageTitle=${pageTitle},
-                       pageSubtitle=${pageSubtitle}
-                     )}"></div>
-
-    <!-- Alerts -->
-    <div th:replace="~{fragments/alerts :: alerts()}"></div>
-
-    <!-- Conteúdo específico da view -->
-    <div layout:fragment="content"></div>
+    <!-- Page Content -->
+    <div layout:fragment="content">
+        <!-- Default content will be replaced -->
+    </div>
 </main>
 
-<!-- Footer e scripts -->
+<!-- Footer -->
+<div th:replace="~{fragments/transaction-modal :: transaction-modal}"></div>
+<div th:replace="~{fragments/transaction-modal :: category-modal}"></div>
+
+<!-- Loading Spinner (Global) -->
+<div id="loadingSpinner" class="d-none position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-white bg-opacity-75" style="z-index: 9999;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Main JavaScript -->
+<script th:src="@{/js/main.js}"></script>
+<script th:replace="~{fragments/transaction-modal :: transaction-modal-js}"></script>
+
+<!-- Script global para abrir o modal -->
+<script>
+    // Função global para abrir modal de nova transação
+    function openTransactionModal(type = 'ENTRADA') {
+        const modal = new bootstrap.Modal(document.getElementById('transactionModal'));
+
+        // Definir tipo se especificado
+        if (type) {
+            const typeOption = document.querySelector(`.transaction-type-option[data-type="${type}"]`);
+            if (typeOption) {
+                typeOption.click();
+            }
+        }
+
+        modal.show();
+    }
+
+    // Função para abrir modal de edição
+    function editTransaction(id) {
+        // Implementar lógica de edição
+        console.log('Editando transação:', id);
+        openTransactionModal();
+    }
+
+    // Atalhos de teclado
+    document.addEventListener('keydown', function(e) {
+        // Ctrl + N = Nova transação
+        if (e.ctrlKey && e.key === 'n') {
+            e.preventDefault();
+            openTransactionModal();
+        }
+
+        // Escape = Fechar modal
+        if (e.key === 'Escape') {
+            const modals = document.querySelectorAll('.modal.show');
+            modals.forEach(modal => {
+                bootstrap.Modal.getInstance(modal)?.hide();
+            });
+        }
+    });
+</script>
+<!-- Page specific JavaScript -->
+<th:block layout:fragment="javascript"></th:block>
 </body>
 </html>

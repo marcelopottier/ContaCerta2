@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
@@ -31,10 +32,10 @@ public class DataInitializer implements CommandLineRunner {
                            CategoryRepository categoryRepository,
                            TransactionRepository transactionRepository,
                            PasswordEncoder passwordEncoder) {
-        this.userRepository        = userRepository;
-        this.categoryRepository    = categoryRepository;
+        this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
         this.transactionRepository = transactionRepository;
-        this.passwordEncoder       = passwordEncoder;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -44,52 +45,169 @@ public class DataInitializer implements CommandLineRunner {
             return;
         }
 
-        // Cria usuário de teste
+        try {
+            log.info("🚀 Iniciando criação de dados de teste...");
+
+            // Cria usuário de teste com dados completos
+            User user = createTestUser();
+
+            // Cria categorias mais abrangentes
+            List<Category> categories = createCategories(user);
+
+            // Cria transações de exemplo
+            createSampleTransactions(user, categories);
+
+            log.info("✅ Dados de teste criados com sucesso!");
+            log.info("📧 Email: {}", user.getEmail());
+            log.info("🔑 Senha: 123456");
+            log.info("📊 {} categorias criadas", categories.size());
+            log.info("💰 {} transações criadas", transactionRepository.count());
+
+        } catch (Exception e) {
+            log.error("❌ Erro ao criar dados de teste: {}", e.getMessage(), e);
+        }
+    }
+
+    private User createTestUser() {
         User user = new User();
-        user.setName("Usuário Teste");
+        user.setName("João Silva");
         user.setEmail("teste@email.com");
+        user.setAvatarFileName("image.png");
         user.setPasswordHash(passwordEncoder.encode("123456"));
-        user = userRepository.save(user);
 
-        // Cria categorias
-        Category salario     = new Category("Salário", user);
-        Category alimentacao = new Category("Alimentação", user);
-        Category transporte  = new Category("Transporte", user);
-        Category lazer       = new Category("Lazer", user);
-        categoryRepository.saveAll(List.of(salario, alimentacao, transporte, lazer));
+        // Adicionar campos adicionais se existirem na entidade
+        try {
+            user.setPhone("(11) 99999-9999");
+            user.setDateOfBirth(LocalDate.of(1990, 5, 15));
 
-        // Cria transações
-        Transaction t1 = new Transaction(
-                TransactionType.ENTRADA,
-                new BigDecimal("3000.00"),
-                LocalDate.now().minusDays(5),
-                "Salário mensal",
-                user, salario
-        );
-        Transaction t2 = new Transaction(
-                TransactionType.SAIDA,
-                new BigDecimal("150.00"),
-                LocalDate.now().minusDays(3),
-                "Supermercado",
-                user, alimentacao
-        );
-        Transaction t3 = new Transaction(
-                TransactionType.SAIDA,
-                new BigDecimal("80.00"),
-                LocalDate.now().minusDays(2),
-                "Combustível",
-                user, transporte
-        );
-        Transaction t4 = new Transaction(
-                TransactionType.SAIDA,
-                new BigDecimal("120.00"),
-                LocalDate.now().minusDays(1),
-                "Cinema",
-                user, lazer
-        );
-        transactionRepository.saveAll(List.of(t1, t2, t3, t4));
+            // Se os campos de timestamp existirem
+            if (hasField(user, "createdAt")) {
+                user.setCreatedAt(LocalDateTime.now().minusMonths(3));
+            }
+            if (hasField(user, "updatedAt")) {
+                user.setUpdatedAt(LocalDateTime.now());
+            }
+        } catch (Exception e) {
+            // Campos opcionais não existem, continuar normalmente
+            log.debug("Alguns campos opcionais não estão disponíveis na entidade User");
+        }
 
-        log.info("Dados de teste criados com sucesso:");
-        log.info("  • Usuário: {} / Senha: {}", user.getEmail(), "123456");
+        return userRepository.save(user);
+    }
+
+    private List<Category> createCategories(User user) {
+        List<Category> categories = List.of(
+                // Receitas
+                new Category("Salário", user),
+                new Category("Freelance", user),
+                new Category("Investimentos", user),
+
+                // Gastos Essenciais
+                new Category("Alimentação", user),
+                new Category("Moradia", user),
+                new Category("Transporte", user),
+                new Category("Saúde", user),
+
+                // Gastos Pessoais
+                new Category("Lazer", user),
+                new Category("Roupas", user),
+                new Category("Tecnologia", user),
+                new Category("Educação", user),
+
+                // Outros
+                new Category("Impostos", user),
+                new Category("Emergências", user)
+        );
+
+        return categoryRepository.saveAll(categories);
+    }
+
+    private void createSampleTransactions(User user, List<Category> categories) {
+        // Buscar categorias específicas
+        Category salario = findCategory(categories, "Salário");
+        Category alimentacao = findCategory(categories, "Alimentação");
+        Category transporte = findCategory(categories, "Transporte");
+        Category lazer = findCategory(categories, "Lazer");
+        Category moradia = findCategory(categories, "Moradia");
+        Category freelance = findCategory(categories, "Freelance");
+        Category saude = findCategory(categories, "Saúde");
+        Category tecnologia = findCategory(categories, "Tecnologia");
+
+        // Transações do mês atual (para aparecer no dashboard)
+        List<Transaction> currentMonthTransactions = List.of(
+                // Receitas
+                new Transaction(TransactionType.ENTRADA, new BigDecimal("3020.09"),
+                        LocalDate.now().minusDays(5), "Salário", user, salario),
+
+                new Transaction(TransactionType.ENTRADA, new BigDecimal("20.09"),
+                        LocalDate.now(), "Pix recebido", user, salario),
+
+                // Gastos recentes
+                new Transaction(TransactionType.SAIDA, new BigDecimal("150.00"),
+                        LocalDate.now().minusDays(3), "Supermercado", user, alimentacao),
+
+                new Transaction(TransactionType.SAIDA, new BigDecimal("80.00"),
+                        LocalDate.now().minusDays(2), "Combustível", user, transporte),
+
+                new Transaction(TransactionType.SAIDA, new BigDecimal("120.00"),
+                        LocalDate.now().minusDays(1), "Cinema", user, lazer)
+        );
+
+        // Transações do mês passado
+        List<Transaction> lastMonthTransactions = List.of(
+                new Transaction(TransactionType.ENTRADA, new BigDecimal("3000.00"),
+                        LocalDate.now().minusMonths(1).withDayOfMonth(5), "Salário mês passado", user, salario),
+
+                new Transaction(TransactionType.ENTRADA, new BigDecimal("800.00"),
+                        LocalDate.now().minusMonths(1).withDayOfMonth(15), "Projeto freelance", user, freelance),
+
+                new Transaction(TransactionType.SAIDA, new BigDecimal("1200.00"),
+                        LocalDate.now().minusMonths(1).withDayOfMonth(10), "Aluguel", user, moradia),
+
+                new Transaction(TransactionType.SAIDA, new BigDecimal("350.00"),
+                        LocalDate.now().minusMonths(1).withDayOfMonth(12), "Contas de casa", user, moradia),
+
+                new Transaction(TransactionType.SAIDA, new BigDecimal("200.00"),
+                        LocalDate.now().minusMonths(1).withDayOfMonth(20), "Médico", user, saude),
+
+                new Transaction(TransactionType.SAIDA, new BigDecimal("450.00"),
+                        LocalDate.now().minusMonths(1).withDayOfMonth(25), "Compras alimentação", user, alimentacao)
+        );
+
+        // Algumas transações especiais
+        List<Transaction> specialTransactions = List.of(
+                new Transaction(TransactionType.SAIDA, new BigDecimal("2500.00"),
+                        LocalDate.now().minusDays(60), "Notebook novo", user, tecnologia),
+
+                new Transaction(TransactionType.ENTRADA, new BigDecimal("500.00"),
+                        LocalDate.now().minusDays(45), "Rendimento investimentos", user,
+                        findCategory(categories, "Investimentos"))
+        );
+
+        // Salvar todas as transações
+        transactionRepository.saveAll(currentMonthTransactions);
+        transactionRepository.saveAll(lastMonthTransactions);
+        transactionRepository.saveAll(specialTransactions);
+
+        log.info("📈 Transações criadas por período:");
+        log.info("   • Mês atual: {} transações", currentMonthTransactions.size());
+        log.info("   • Mês passado: {} transações", lastMonthTransactions.size());
+        log.info("   • Especiais: {} transações", specialTransactions.size());
+    }
+
+    private Category findCategory(List<Category> categories, String name) {
+        return categories.stream()
+                .filter(c -> c.getName().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Categoria não encontrada: " + name));
+    }
+
+    private boolean hasField(Object obj, String fieldName) {
+        try {
+            obj.getClass().getDeclaredField(fieldName);
+            return true;
+        } catch (NoSuchFieldException e) {
+            return false;
+        }
     }
 }

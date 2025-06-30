@@ -6,6 +6,8 @@
 
 <head>
     <title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">Categorias</title>
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css"/>
 
     <th:block layout:fragment="css">
         <style>
@@ -74,280 +76,202 @@
 
 <body>
 <div layout:fragment="content">
-    <!-- Page Variables -->
-    <div th:with="pageTitle='Gerenciar Categorias',
-                     pageSubtitle='Organize suas transações em categorias personalizadas',
-                     breadcrumbs=${#lists.toList({'title': 'Dashboard', 'url': '/dashboard'}, {'title': 'Categorias', 'url': '/categories'})},
-                     pageActions='<button class=&quot;btn btn-primary&quot; data-bs-toggle=&quot;modal&quot; data-bs-target=&quot;#categoryModal&quot;><i class=&quot;bi bi-plus me-1&quot;></i>Nova Categoria</button>'">
-
-        <div class="container-fluid">
-            <!-- Stats Cards -->
-            <div class="row g-4 mb-4">
-                <div class="col-xl-3 col-md-6">
-                    <div class="card text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <div class="h5 mb-0" th:text="${categoriesStats?.totalCategorias ?: 0}">0</div>
-                                    <div class="small opacity-75">Total de Categorias</div>
-                                </div>
-                                <div class="ms-3">
-                                    <i class="bi bi-tags" style="font-size: 2rem; opacity: 0.8;"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6">
-                    <div class="card text-white" style="background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <div class="h5 mb-0" th:text="${categoriesStats?.categoriasComTransacoes ?: 0}">0</div>
-                                    <div class="small opacity-75">Com Transações</div>
-                                </div>
-                                <div class="ms-3">
-                                    <i class="bi bi-check-circle" style="font-size: 2rem; opacity: 0.8;"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6">
-                    <div class="card text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <div class="h5 mb-0" th:text="${categoriesStats?.totalTransacoes ?: 0}">0</div>
-                                    <div class="small opacity-75">Total Transações</div>
-                                </div>
-                                <div class="ms-3">
-                                    <i class="bi bi-arrow-left-right" style="font-size: 2rem; opacity: 0.8;"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6">
-                    <div class="card text-white" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <div class="h5 mb-0" th:text="${categoriesStats?.maiorCategoria ?: 'N/A'}">N/A</div>
-                                    <div class="small opacity-75">Categoria + Usada</div>
-                                </div>
-                                <div class="ms-3">
-                                    <i class="bi bi-trophy" style="font-size: 2rem; opacity: 0.8;"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="container-fluid">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 mb-1 fw-bold text-dark">Categorias</h1>
             </div>
-
-            <!-- Categories Grid -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-tags me-2"></i>Suas Categorias
-                            </h5>
-                            <div class="d-flex gap-2">
-                                <div class="input-group" style="width: 250px;">
-                                        <span class="input-group-text">
-                                            <i class="bi bi-search"></i>
-                                        </span>
-                                    <input type="text"
-                                           class="form-control"
-                                           id="searchCategories"
-                                           placeholder="Buscar categorias...">
-                                </div>
-                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal">
-                                    <i class="bi bi-plus me-1"></i>Nova
-                                </button>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal">
+                <i class="bi bi-plus me-1"></i>Nova Categoria
+            </button>
+        </div>
+        <!-- Categories Grid -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-tags me-2"></i><span>Categorias</span>
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <div class="input-group" style="width: 250px;">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-search"></i>
+                                    </span>
+                                <input type="text"
+                                       class="form-control"
+                                       id="searchCategories"
+                                       placeholder="Buscar categorias...">
                             </div>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal">
+                                <i class="bi bi-plus me-1"></i>Nova
+                            </button>
                         </div>
-                        <div class="card-body">
-                            <!-- Categories List -->
-                            <div th:if="${categories != null and !categories.isEmpty()}">
-                                <div class="row g-4" id="categoriesContainer">
-                                    <div th:each="category : ${categories}"
-                                         class="col-lg-4 col-md-6 category-item"
-                                         th:data-name="${#strings.toLowerCase(category.name)}">
-                                        <div class="card category-card h-100">
-                                            <div class="card-body">
-                                                <div class="d-flex align-items-start">
-                                                    <div class="category-icon me-3">
-                                                        <i class="bi bi-tag"></i>
-                                                    </div>
-                                                    <div class="flex-grow-1">
-                                                        <h6 class="card-title mb-1" th:text="${category.name}">Nome da Categoria</h6>
-                                                        <div class="category-stats text-muted">
-                                                            <small>
-                                                                <i class="bi bi-arrow-left-right me-1"></i>
-                                                                <span th:text="${category.transactions?.size() ?: 0}">0</span> transações
-                                                            </small>
-                                                        </div>
-
-                                                        <!-- Usage Progress -->
-                                                        <div class="mt-2">
-                                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                                <small class="text-muted">Uso no mês</small>
-                                                                <small class="text-muted">75%</small>
-                                                            </div>
-                                                            <div class="progress" style="height: 4px;">
-                                                                <div class="progress-bar bg-primary" style="width: 75%"></div>
-                                                            </div>
-                                                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Categories List -->
+                        <div th:if="${categories != null and !categories.isEmpty()}">
+                            <div class="row g-4" id="categoriesContainer">
+                                <div th:each="category : ${categories}"
+                                     class="col-lg-4 col-md-6 category-item"
+                                     th:data-name="${#strings.toLowerCase(category.name)}">
+                                    <div class="card category-card h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-start">
+                                                <div class="category-icon me-3">
+                                                    <i class="bi bi-tag"></i>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <h6 class="card-title mb-1" th:text="${category.name}">Nome da Categoria</h6>
+                                                    <div class="category-stats text-muted">
+                                                        <small>
+                                                            <i class="bi bi-arrow-left-right me-1"></i>
+                                                            <span th:text="${category.transactions?.size() ?: 0}">0</span> transações
+                                                        </small>
                                                     </div>
                                                 </div>
+                                            </div>
 
-                                                <!-- Action Buttons -->
-                                                <div class="action-buttons mt-3">
-                                                    <div class="d-flex gap-1">
-                                                        <button class="btn btn-outline-primary btn-sm flex-fill"
-                                                                onclick="editCategory([[${category.id}]], '[[${category.name}]]')">
-                                                            <i class="bi bi-pencil me-1"></i>Editar
-                                                        </button>
-                                                        <button class="btn btn-outline-danger btn-sm"
-                                                                onclick="deleteCategory([[${category.id}]], '[[${category.name}]]')"
-                                                                th:disabled="${category.transactions?.size() > 0}">
-                                                            <i class="bi bi-trash me-1"></i>
-                                                        </button>
-                                                    </div>
+                                            <!-- Action Buttons -->
+                                            <div class="action-buttons mt-3">
+                                                <div class="d-flex gap-1">
+                                                    <button class="btn btn-outline-primary btn-sm flex-fill"
+                                                            data-category-id="[[${category.id}]]"
+                                                            data-category-name="[[${category.name}]]"
+                                                            onclick="editCategory(this)">
+                                                        <i class="bi bi-pencil me-1"></i>Editar
+                                                    </button>
+                                                    <button class="btn btn-outline-danger btn-sm"
+                                                            data-category-id="[[${category.id}]]"
+                                                            data-category-name="[[${category.name}]]"
+                                                            onclick="deleteCategory(this)"
+                                                            th:disabled="${category.transactions?.size() > 0}">
+                                                        <i class="bi bi-trash me-1"></i>
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Empty State -->
-                            <div th:if="${categories == null or categories.isEmpty()}"
-                                 class="text-center py-5">
-                                <i class="bi bi-tags text-muted" style="font-size: 4rem;"></i>
-                                <h4 class="text-muted mt-3">Nenhuma categoria encontrada</h4>
-                                <p class="text-muted">Crie sua primeira categoria para organizar suas transações</p>
-                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal">
-                                    <i class="bi bi-plus me-1"></i>Criar primeira categoria
-                                </button>
-                            </div>
+                        <!-- Empty State -->
+                        <div th:if="${categories == null or categories.isEmpty()}"
+                             class="text-center py-5">
+                            <i class="bi bi-tags text-muted" style="font-size: 4rem;"></i>
+                            <h4 class="text-muted mt-3">Nenhuma categoria encontrada</h4>
+                            <p class="text-muted">Crie sua primeira categoria para organizar suas transações</p>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal">
+                                <i class="bi bi-plus me-1"></i>Criar primeira categoria
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Category Modal -->
-        <div class="modal fade" id="categoryModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="bi bi-tag me-2"></i>
-                            <span id="categoryModalTitle">Nova Categoria</span>
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-
-                    <form th:action="@{/categories}" method="post" novalidate>
-                        <div class="modal-body">
-                            <div class="mb-3">
-                                <label for="categoryName" class="form-label fw-bold">
-                                    <i class="bi bi-tag me-1"></i>Nome da Categoria
-                                </label>
-                                <input type="text"
-                                       class="form-control"
-                                       id="categoryName"
-                                       name="name"
-                                       placeholder="Ex: Alimentação, Transporte, Lazer..."
-                                       required
-                                       maxlength="50">
-                                <div class="invalid-feedback">
-                                    Por favor, informe o nome da categoria (máximo 50 caracteres).
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">
-                                    <i class="bi bi-palette me-1"></i>Cor da Categoria (opcional)
-                                </label>
-                                <div class="color-picker">
-                                    <div class="color-option selected"
-                                         style="background-color: #6f42c1;"
-                                         data-color="#6f42c1"
-                                         title="Roxo"></div>
-                                    <div class="color-option"
-                                         style="background-color: #198754;"
-                                         data-color="#198754"
-                                         title="Verde"></div>
-                                    <div class="color-option"
-                                         style="background-color: #0d6efd;"
-                                         data-color="#0d6efd"
-                                         title="Azul"></div>
-                                    <div class="color-option"
-                                         style="background-color: #dc3545;"
-                                         data-color="#dc3545"
-                                         title="Vermelho"></div>
-                                    <div class="color-option"
-                                         style="background-color: #fd7e14;"
-                                         data-color="#fd7e14"
-                                         title="Laranja"></div>
-                                    <div class="color-option"
-                                         style="background-color: #ffc107;"
-                                         data-color="#ffc107"
-                                         title="Amarelo"></div>
-                                    <div class="color-option"
-                                         style="background-color: #20c997;"
-                                         data-color="#20c997"
-                                         title="Teal"></div>
-                                    <div class="color-option"
-                                         style="background-color: #e83e8c;"
-                                         data-color="#e83e8c"
-                                         title="Rosa"></div>
-                                </div>
-                                <input type="hidden" id="categoryColor" name="color" value="#6f42c1">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="categoryDescription" class="form-label fw-bold">
-                                    <i class="bi bi-file-text me-1"></i>Descrição (opcional)
-                                </label>
-                                <textarea class="form-control"
-                                          id="categoryDescription"
-                                          name="description"
-                                          rows="2"
-                                          placeholder="Descreva o uso desta categoria..."
-                                          maxlength="255"></textarea>
-                            </div>
-                        </div>
-
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                <i class="bi bi-x-circle me-1"></i>Cancelar
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-1"></i>
-                                <span id="categoryModalAction">Salvar Categoria</span>
-                            </button>
-                        </div>
-
-                        <!-- CSRF Token -->
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf}"/>
-                        <input type="hidden" id="categoryId" name="id" value="">
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Confirm Delete Modal -->
-        <div th:replace="~{fragments/components :: confirm-modal}"></div>
     </div>
+
+    <!-- Category Modal -->
+    <div class="modal fade" id="categoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-tag me-2"></i>
+                        <span id="categoryModalTitle">Nova Categoria</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <form th:action="@{/categories}" method="post" novalidate>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="categoryName" class="form-label fw-bold">
+                                <i class="bi bi-tag me-1"></i>Nome da Categoria
+                            </label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="categoryName"
+                                   name="name"
+                                   placeholder="Ex: Alimentação, Transporte, Lazer..."
+                                   required
+                                   maxlength="50">
+                            <div class="invalid-feedback">
+                                Por favor, informe o nome da categoria (máximo 50 caracteres).
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-palette me-1"></i>Cor da Categoria (opcional)
+                            </label>
+                            <div class="color-picker">
+                                <div class="color-option selected"
+                                     style="background-color: #6f42c1;"
+                                     data-color="#6f42c1"
+                                     title="Roxo"></div>
+                                <div class="color-option"
+                                     style="background-color: #198754;"
+                                     data-color="#198754"
+                                     title="Verde"></div>
+                                <div class="color-option"
+                                     style="background-color: #0d6efd;"
+                                     data-color="#0d6efd"
+                                     title="Azul"></div>
+                                <div class="color-option"
+                                     style="background-color: #dc3545;"
+                                     data-color="#dc3545"
+                                     title="Vermelho"></div>
+                                <div class="color-option"
+                                     style="background-color: #fd7e14;"
+                                     data-color="#fd7e14"
+                                     title="Laranja"></div>
+                                <div class="color-option"
+                                     style="background-color: #ffc107;"
+                                     data-color="#ffc107"
+                                     title="Amarelo"></div>
+                                <div class="color-option"
+                                     style="background-color: #20c997;"
+                                     data-color="#20c997"
+                                     title="Teal"></div>
+                                <div class="color-option"
+                                     style="background-color: #e83e8c;"
+                                     data-color="#e83e8c"
+                                     title="Rosa"></div>
+                            </div>
+                            <input type="hidden" id="categoryColor" name="color" value="#6f42c1">
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i>Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i>
+                            <span id="categoryModalAction">Salvar Categoria</span>
+                        </button>
+                    </div>
+
+                    <!-- CSRF Token -->
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf}"/>
+                    <input type="hidden" id="categoryId" name="id" value="">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div th:replace="~{fragments/components :: confirm-modal}"></div>
 </div>
+<!-- jQuery (necessário para DataTables) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
 
 <th:block layout:fragment="javascript">
     <script>
@@ -452,44 +376,52 @@
             });
         }
 
-        function editCategory(id, name) {
-            const modal = document.getElementById('categoryModal');
-            const form = modal.querySelector('form');
-
-            // Set form action for editing
-            form.action = `/categories/${id}`;
-
-            // Fill form data
-            document.getElementById('categoryId').value = id;
-            document.getElementById('categoryName').value = name;
-            document.getElementById('categoryModalTitle').textContent = 'Editar Categoria';
-            document.getElementById('categoryModalAction').textContent = 'Atualizar Categoria';
-
-            // Show modal
-            new bootstrap.Modal(modal).show();
+        function editCategory(button) {
+           // Lê os atributos data do botão
+           const id = button.getAttribute('data-category-id');
+           const name = button.getAttribute('data-category-name');
+            
+           const modal = document.getElementById('categoryModal');
+           const form = modal.querySelector('form');
+            
+           // Set form action for editing
+           form.action = `/categories/${id}`;
+            
+           // Preenche os dados no modal
+           document.getElementById('categoryId').value = id;
+           document.getElementById('categoryName').value = name;
+           document.getElementById('categoryModalTitle').textContent = 'Editar Categoria';
+           document.getElementById('categoryModalAction').textContent = 'Atualizar Categoria';
+            
+           // Abrir modal
+           new bootstrap.Modal(modal).show();
         }
 
-        function deleteCategory(id, name) {
-            FinanceApp.ui.showConfirmModal(
-                `Tem certeza que deseja excluir a categoria "${name}"?`,
-                async function() {
-                    try {
-                        const response = await FinanceApp.http.delete(`/api/categories/${id}`);
 
-                        if (response && response.ok) {
-                            FinanceApp.ui.showAlert('Categoria excluída com sucesso!', 'success');
-                            setTimeout(() => window.location.reload(), 1000);
-                        } else {
-                            const error = await response.text();
-                            FinanceApp.ui.showAlert('Erro ao excluir categoria: ' + error, 'danger');
-                        }
-                    } catch (error) {
-                        FinanceApp.ui.showAlert('Erro de conexão. Tente novamente.', 'danger');
-                    }
-                },
-                'Excluir Categoria'
-            );
-        }
+        function deleteCategory(button) {
+    const id = button.getAttribute('data-category-id');
+    const name = button.getAttribute('data-category-name');
+    FinanceApp.ui.showConfirmModal(
+        `Tem certeza que deseja excluir a categoria "${name}"?`,
+        async function() {
+            try {
+                const response = await FinanceApp.http.delete(`/api/categories/${id}`);
+
+                if (response && response.ok) {
+                    FinanceApp.ui.showAlert('Categoria excluída com sucesso!', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    const error = await response.text();
+                    FinanceApp.ui.showAlert('Erro ao excluir categoria: ' + error, 'danger');
+                }
+            } catch (error) {
+                FinanceApp.ui.showAlert('Erro de conexão. Tente novamente.', 'danger');
+            }
+        },
+        'Excluir Categoria'
+    );
+}
+
     </script>
 </th:block>
 </body>

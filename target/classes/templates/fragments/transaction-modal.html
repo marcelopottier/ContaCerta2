@@ -1,10 +1,419 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 
-<!-- Transaction Modal Fragment -->
-<div th:fragment="transaction-modal" class="modal fade" id="transactionModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+<!-- Styles for Beautiful Transaction Modal -->
+<style th:fragment="transaction-modal-styles">
+    /* Modal Backdrop */
+    .modal-backdrop {
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(8px);
+    }
+
+    /* Modal Container */
+    .transaction-modal .modal-dialog {
+        max-width: 600px;
+        margin: 2rem auto;
+    }
+
+    .transaction-modal .modal-content {
+        border: none;
+        border-radius: 1.25rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        background: white;
+        overflow: hidden;
+    }
+
+    /* Modal Header */
+    .transaction-modal .modal-header {
+        background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+        color: white;
+        border: none;
+        padding: 2rem 2rem 1.5rem;
+        position: relative;
+    }
+
+    .transaction-modal .modal-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") center/cover;
+        opacity: 0.1;
+    }
+
+    .transaction-modal .modal-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        position: relative;
+        z-index: 1;
+    }
+
+    .transaction-modal .btn-close {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        opacity: 1;
+        position: relative;
+        z-index: 1;
+        transition: all 0.3s ease;
+    }
+
+    .transaction-modal .btn-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+    }
+
+    /* Modal Body */
+    .transaction-modal .modal-body {
+        padding: 2.5rem 2rem 2rem;
+        background: #fafbfc;
+    }
+
+    /* Form Sections */
+    .form-section {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .form-section:hover {
+        border-color: #a78bfa;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .form-section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-section-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+    }
+
+    /* Transaction Type Toggle */
+    .transaction-type-toggle {
+        display: flex;
+        background: #f1f5f9;
+        border-radius: 0.75rem;
+        padding: 0.25rem;
+        gap: 0.25rem;
+        position: relative;
+    }
+
+    .transaction-type-option {
+        flex: 1;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border: none;
+        background: transparent;
+        color: #64748b;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .transaction-type-option.active {
+        background: white;
+        color: #1e293b;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .transaction-type-option.entrada.active {
+        color: #10b981;
+    }
+
+    .transaction-type-option.saida.active {
+        color: #ef4444;
+    }
+
+    .transaction-type-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .transaction-type-option.entrada .transaction-type-icon {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+
+    .transaction-type-option.saida .transaction-type-icon {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+    }
+
+    /* Enhanced Form Controls */
+    .enhanced-input-group {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    .enhanced-input-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .enhanced-input {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.75rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .enhanced-input:focus {
+        border-color: #a78bfa;
+        box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.1);
+        outline: none;
+    }
+
+    .enhanced-input:invalid:not(:focus):not(:placeholder-shown) {
+        border-color: #ef4444;
+    }
+
+    /* Value Input with Currency */
+    .currency-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .currency-symbol {
+        position: absolute;
+        left: 1rem;
+        color: #6b7280;
+        font-weight: 600;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    .currency-input {
+        padding-left: 2.5rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+        text-align: right;
+    }
+
+    /* Category Select with Quick Add */
+    .category-input-wrapper {
+        display: flex;
+        gap: 0.75rem;
+        align-items: end;
+    }
+
+    .category-select {
+        flex: 1;
+    }
+
+    .quick-add-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 0.75rem;
+        border: 2px solid #e5e7eb;
+        background: white;
+        color: #6b7280;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .quick-add-btn:hover {
+        border-color: #a78bfa;
+        background: #a78bfa;
+        color: white;
+        transform: scale(1.05);
+    }
+
+    /* Description Textarea */
+    .description-textarea {
+        min-height: 80px;
+        resize: vertical;
+        font-family: inherit;
+    }
+
+    /* Modal Footer */
+    .transaction-modal .modal-footer {
+        background: white;
+        border: none;
+        padding: 2rem;
+        gap: 1rem;
+    }
+
+    .modal-btn {
+        padding: 0.875rem 2rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 120px;
+        justify-content: center;
+    }
+
+    .modal-btn-secondary {
+        background: #f1f5f9;
+        color: #475569;
+        border: 2px solid #e2e8f0;
+    }
+
+    .modal-btn-secondary:hover {
+        background: #e2e8f0;
+        transform: translateY(-1px);
+    }
+
+    .modal-btn-primary {
+        background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);
+        color: white;
+        box-shadow: 0 4px 6px -1px rgba(167, 139, 250, 0.25);
+    }
+
+    .modal-btn-primary:hover {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px -6px rgba(167, 139, 250, 0.4);
+    }
+
+    .modal-btn:disabled {
+        opacity: 0.5;
+        transform: none !important;
+        cursor: not-allowed;
+    }
+
+    /* Quick Category Modal */
+    .category-modal .modal-dialog {
+        max-width: 400px;
+    }
+
+    .category-modal .modal-content {
+        border-radius: 1rem;
+        border: none;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+    }
+
+    .category-modal .modal-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border: none;
+        border-radius: 1rem 1rem 0 0;
+    }
+
+    .category-modal .modal-body {
+        padding: 2rem;
+    }
+
+    /* Animation Classes */
+    .fade-in {
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .slide-up {
+        animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Success/Error States */
+    .form-feedback {
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .form-feedback.success {
+        color: #10b981;
+    }
+
+    .form-feedback.error {
+        color: #ef4444;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .transaction-modal .modal-dialog {
+            margin: 1rem;
+            max-width: none;
+        }
+
+        .transaction-modal .modal-body {
+            padding: 1.5rem 1rem;
+        }
+
+        .form-section {
+            padding: 1rem;
+        }
+
+        .transaction-modal .modal-footer {
+            padding: 1.5rem 1rem;
+            flex-direction: column;
+        }
+
+        .modal-btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<!-- Beautiful Transaction Modal Fragment -->
+<div th:fragment="transaction-modal" class="modal fade transaction-modal" id="transactionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content fade-in">
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="bi bi-plus-circle me-2"></i>
@@ -13,70 +422,97 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <form th:action="@{/transactions}" method="post" novalidate>
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <!-- Transaction Type -->
-                        <div class="col-12">
-                            <label for="transactionType" class="form-label fw-bold">
-                                <i class="bi bi-arrow-left-right me-1"></i>Tipo de Transação
-                            </label>
-                            <div class="btn-group w-100" role="group">
-                                <input type="radio" class="btn-check" name="type" id="typeEntrada" value="ENTRADA" checked>
-                                <label class="btn btn-outline-success" for="typeEntrada">
-                                    <i class="bi bi-arrow-up-circle me-1"></i>Entrada
-                                </label>
+            <form th:action="@{/transactions}" method="post" novalidate id="transactionForm">
+                <div class="modal-body slide-up">
 
-                                <input type="radio" class="btn-check" name="type" id="typeSaida" value="SAIDA">
-                                <label class="btn btn-outline-danger" for="typeSaida">
-                                    <i class="bi bi-arrow-down-circle me-1"></i>Saída
-                                </label>
+                    <!-- Transaction Type Section -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <div class="form-section-icon">
+                                <i class="bi bi-arrow-left-right"></i>
                             </div>
+                            Tipo de Transação
                         </div>
 
-                        <!-- Value and Date Row -->
-                        <div class="col-md-6">
-                            <label for="transactionValue" class="form-label fw-bold">
-                                <i class="bi bi-currency-dollar me-1"></i>Valor
-                            </label>
-                            <div class="input-group">
-                                <span class="input-group-text">R$</span>
-                                <input type="number"
-                                       class="form-control"
-                                       id="transactionValue"
-                                       name="value"
-                                       placeholder="0,00"
-                                       step="0.01"
-                                       min="0.01"
-                                       required>
-                                <div class="invalid-feedback">
-                                    Por favor, informe um valor válido.
+                        <div class="transaction-type-toggle">
+                            <button type="button" class="transaction-type-option entrada active" data-type="ENTRADA">
+                                <div class="transaction-type-icon">
+                                    <i class="bi bi-arrow-up"></i>
+                                </div>
+                                Entrada
+                            </button>
+                            <button type="button" class="transaction-type-option saida" data-type="SAIDA">
+                                <div class="transaction-type-icon">
+                                    <i class="bi bi-arrow-down"></i>
+                                </div>
+                                Saída
+                            </button>
+                            <input type="hidden" name="type" id="transactionType" value="ENTRADA">
+                        </div>
+                    </div>
+
+                    <!-- Value and Date Section -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <div class="form-section-icon">
+                                <i class="bi bi-cash-coin"></i>
+                            </div>
+                            Valor e Data
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-7">
+                                <div class="enhanced-input-group">
+                                    <label class="enhanced-input-label">
+                                        <i class="bi bi-currency-dollar"></i>
+                                        Valor
+                                    </label>
+                                    <div class="currency-input-wrapper">
+                                        <span class="currency-symbol">R$</span>
+                                        <input type="number"
+                                               class="enhanced-input currency-input"
+                                               id="transactionValue"
+                                               name="value"
+                                               placeholder="0,00"
+                                               step="0.01"
+                                               min="0.01"
+                                               required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="enhanced-input-group">
+                                    <label class="enhanced-input-label">
+                                        <i class="bi bi-calendar-event"></i>
+                                        Data
+                                    </label>
+                                    <input type="date"
+                                           class="enhanced-input"
+                                           id="transactionDate"
+                                           name="date"
+                                           required>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="col-md-6">
-                            <label for="transactionDate" class="form-label fw-bold">
-                                <i class="bi bi-calendar me-1"></i>Data
-                            </label>
-                            <input type="date"
-                                   class="form-control"
-                                   id="transactionDate"
-                                   name="date"
-                                   required>
-                            <div class="invalid-feedback">
-                                Por favor, selecione uma data.
+                    <!-- Category Section -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <div class="form-section-icon">
+                                <i class="bi bi-tags"></i>
                             </div>
+                            Categoria
                         </div>
 
-                        <!-- Category -->
-                        <div class="col-12">
-                            <label for="transactionCategory" class="form-label fw-bold">
-                                <i class="bi bi-tags me-1"></i>Categoria
+                        <div class="enhanced-input-group">
+                            <label class="enhanced-input-label">
+                                <i class="bi bi-tag"></i>
+                                Selecione a categoria
                             </label>
-                            <div class="d-flex gap-2">
-                                <select class="form-select" id="transactionCategory" name="categoryId" required>
-                                    <option value="">Selecione uma categoria</option>
+                            <div class="category-input-wrapper">
+                                <select class="enhanced-input category-select" id="transactionCategory" name="categoryId" required>
+                                    <option value="">Escolha uma categoria</option>
                                     <option th:each="category : ${categories}"
                                             th:value="${category.id}"
                                             th:text="${category.name}">
@@ -84,67 +520,48 @@
                                     </option>
                                 </select>
                                 <button type="button"
-                                        class="btn btn-outline-primary"
+                                        class="quick-add-btn"
                                         data-bs-toggle="modal"
                                         data-bs-target="#categoryModal"
-                                        title="Nova categoria">
-                                    <i class="bi bi-plus"></i>
+                                        title="Criar nova categoria">
+                                    <i class="bi bi-plus-lg"></i>
                                 </button>
-                            </div>
-                            <div class="invalid-feedback">
-                                Por favor, selecione uma categoria.
-                            </div>
-                        </div>
-
-                        <!-- Description -->
-                        <div class="col-12">
-                            <label for="transactionDescription" class="form-label fw-bold">
-                                <i class="bi bi-file-text me-1"></i>Descrição
-                            </label>
-                            <textarea class="form-control"
-                                      id="transactionDescription"
-                                      name="description"
-                                      rows="3"
-                                      placeholder="Descreva a transação (opcional)"
-                                      data-auto-resize></textarea>
-                        </div>
-
-                        <!-- Recurring Transaction (Optional) -->
-                        <div class="col-12">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="isRecurring" name="isRecurring">
-                                <label class="form-check-label fw-bold" for="isRecurring">
-                                    <i class="bi bi-arrow-repeat me-1"></i>
-                                    Transação recorrente
-                                </label>
-                            </div>
-
-                            <div class="row g-2 mt-2" id="recurringOptions" style="display: none;">
-                                <div class="col-md-6">
-                                    <select class="form-select form-select-sm" name="recurringType">
-                                        <option value="MONTHLY">Mensal</option>
-                                        <option value="WEEKLY">Semanal</option>
-                                        <option value="YEARLY">Anual</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <input type="number"
-                                           class="form-control form-control-sm"
-                                           name="recurringCount"
-                                           placeholder="Quantidade de repetições"
-                                           min="1" max="12">
-                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Description Section -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <div class="form-section-icon">
+                                <i class="bi bi-file-text"></i>
+                            </div>
+                            Descrição
+                        </div>
+
+                        <div class="enhanced-input-group">
+                            <label class="enhanced-input-label">
+                                <i class="bi bi-chat-dots"></i>
+                                Descreva a transação (opcional)
+                            </label>
+                            <textarea class="enhanced-input description-textarea"
+                                      id="transactionDescription"
+                                      name="description"
+                                      placeholder="Ex: Compras no supermercado, pagamento de conta, salário recebido..."
+                                      rows="3"></textarea>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                    <button type="button" class="modal-btn modal-btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i>
+                        Cancelar
                     </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-circle me-1"></i>Salvar Transação
+                    <button type="submit" class="modal-btn modal-btn-primary">
+                        <i class="bi bi-check-circle"></i>
+                        Salvar Transação
                     </button>
                 </div>
 
@@ -156,39 +573,48 @@
     </div>
 </div>
 
-<!-- Category Quick Add Modal -->
-<div th:fragment="category-modal" class="modal fade" id="categoryModal" tabindex="-1" aria-hidden="true">
+<!-- Enhanced Category Quick Add Modal -->
+<div th:fragment="category-modal" class="modal fade category-modal" id="categoryModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
+        <div class="modal-content fade-in">
             <div class="modal-header">
                 <h6 class="modal-title">
-                    <i class="bi bi-tag me-2"></i>Nova Categoria
+                    <i class="bi bi-tag-fill me-2"></i>Nova Categoria
                 </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <form id="categoryQuickForm">
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="categoryName" class="form-label fw-bold">Nome da Categoria</label>
+                    <div class="enhanced-input-group">
+                        <label class="enhanced-input-label">
+                            <i class="bi bi-tag"></i>
+                            Nome da Categoria
+                        </label>
                         <input type="text"
-                               class="form-control"
+                               class="enhanced-input"
                                id="categoryName"
                                name="name"
-                               placeholder="Ex: Alimentação, Transporte, etc."
+                               placeholder="Ex: Alimentação, Transporte, Entretenimento..."
                                required>
-                        <div class="invalid-feedback">
-                            Por favor, informe o nome da categoria.
-                        </div>
+                        <div class="form-feedback" id="categoryFeedback"></div>
+                    </div>
+
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-lightbulb me-1"></i>
+                            Dica: Use nomes claros e específicos para facilitar a organização
+                        </small>
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+                    <button type="button" class="modal-btn modal-btn-secondary" data-bs-dismiss="modal">
                         Cancelar
                     </button>
-                    <button type="submit" class="btn btn-primary btn-sm">
-                        <i class="bi bi-plus me-1"></i>Adicionar
+                    <button type="submit" class="modal-btn modal-btn-primary">
+                        <i class="bi bi-plus-circle"></i>
+                        Criar Categoria
                     </button>
                 </div>
             </form>
@@ -200,73 +626,92 @@
     document.addEventListener('DOMContentLoaded', function() {
         const transactionModal = document.getElementById('transactionModal');
         const categoryModal = document.getElementById('categoryModal');
-        const recurringCheckbox = document.getElementById('isRecurring');
-        const recurringOptions = document.getElementById('recurringOptions');
-
-        // Set current date as default
-        const dateInput = document.getElementById('transactionDate');
-        if (dateInput) {
-            dateInput.value = new Date().toISOString().split('T')[0];
-        }
-
-        // Handle recurring transaction toggle
-        if (recurringCheckbox && recurringOptions) {
-            recurringCheckbox.addEventListener('change', function() {
-                recurringOptions.style.display = this.checked ? 'block' : 'none';
-            });
-        }
-
-        // Handle transaction type change
-        document.querySelectorAll('input[name="type"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                const modalTitle = document.getElementById('modalTitleText');
-                if (modalTitle) {
-                    modalTitle.textContent = this.value === 'ENTRADA' ? 'Nova Entrada' : 'Nova Saída';
-                }
-            });
-        });
-
-        // Transaction form submission
-        const transactionForm = transactionModal?.querySelector('form');
-        if (transactionForm) {
-            transactionForm.addEventListener('submit', async function(e) {
-                e.preventDefault();
-
-                if (!this.checkValidity()) {
-                    e.stopPropagation();
-                    this.classList.add('was-validated');
-                    return;
-                }
-
-                const submitBtn = this.querySelector('button[type="submit"]');
-                FinanceApp.ui.disableButton(submitBtn);
-
-                try {
-                    const formData = FinanceApp.form.serialize(this);
-                    const response = await FinanceApp.http.post('/api/transactions', formData);
-
-                    if (response && response.ok) {
-                        bootstrap.Modal.getInstance(transactionModal).hide();
-                        FinanceApp.ui.showAlert('Transação salva com sucesso!', 'success');
-
-                        // Reload page or update UI
-                        setTimeout(() => window.location.reload(), 1000);
-                    } else {
-                        const error = await response.text();
-                        FinanceApp.ui.showAlert('Erro ao salvar transação: ' + error, 'danger');
-                    }
-                } catch (error) {
-                    FinanceApp.ui.showAlert('Erro de conexão. Tente novamente.', 'danger');
-                } finally {
-                    FinanceApp.ui.enableButton(submitBtn);
-                }
-            });
-        }
-
-        // Category quick add form
+        const transactionForm = document.getElementById('transactionForm');
         const categoryForm = document.getElementById('categoryQuickForm');
-        if (categoryForm) {
-            categoryForm.addEventListener('submit', async function(e) {
+
+        // Initialize
+        initializeModal();
+        setupTransactionTypeToggle();
+        setupFormValidation();
+        setupCategoryQuickAdd();
+
+        function initializeModal() {
+            // Set current date as default
+            const dateInput = document.getElementById('transactionDate');
+            if (dateInput) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+
+            // Reset modal when hidden
+            transactionModal?.addEventListener('hidden.bs.modal', function() {
+                resetTransactionForm();
+            });
+
+            categoryModal?.addEventListener('hidden.bs.modal', function() {
+                resetCategoryForm();
+            });
+        }
+
+        function setupTransactionTypeToggle() {
+            document.querySelectorAll('.transaction-type-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    // Remove active from all
+                    document.querySelectorAll('.transaction-type-option').forEach(opt =>
+                        opt.classList.remove('active')
+                    );
+
+                    // Add active to clicked
+                    this.classList.add('active');
+
+                    // Update hidden input
+                    const typeInput = document.getElementById('transactionType');
+                    const type = this.dataset.type;
+                    typeInput.value = type;
+
+                    // Update modal title
+                    const modalTitle = document.getElementById('modalTitleText');
+                    modalTitle.textContent = type === 'ENTRADA' ? 'Nova Entrada' : 'Nova Saída';
+
+                    // Add visual feedback
+                    this.style.transform = 'scale(0.98)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+        }
+
+        function setupFormValidation() {
+            transactionForm?.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                if (!this.checkValidity()) {
+                    e.stopPropagation();
+                    this.classList.add('was-validated');
+                    showValidationFeedback();
+                    return;
+                }
+
+                await submitTransactionForm(this);
+            });
+
+            // Real-time validation feedback
+            const inputs = transactionForm?.querySelectorAll('input, select, textarea');
+            inputs?.forEach(input => {
+                input.addEventListener('blur', function() {
+                    validateField(this);
+                });
+
+                input.addEventListener('input', function() {
+                    if (this.classList.contains('is-invalid')) {
+                        validateField(this);
+                    }
+                });
+            });
+        }
+
+        function setupCategoryQuickAdd() {
+            categoryForm?.addEventListener('submit', async function(e) {
                 e.preventDefault();
 
                 if (!this.checkValidity()) {
@@ -275,63 +720,183 @@
                     return;
                 }
 
-                const submitBtn = this.querySelector('button[type="submit"]');
-                FinanceApp.ui.disableButton(submitBtn);
-
-                try {
-                    const formData = FinanceApp.form.serialize(this);
-                    const response = await FinanceApp.http.post('/api/categories', formData);
-
-                    if (response && response.ok) {
-                        const newCategory = await response.json();
-
-                        // Add to select
-                        const categorySelect = document.getElementById('transactionCategory');
-                        if (categorySelect) {
-                            const option = document.createElement('option');
-                            option.value = newCategory.id;
-                            option.textContent = newCategory.name;
-                            option.selected = true;
-                            categorySelect.appendChild(option);
-                        }
-
-                        bootstrap.Modal.getInstance(categoryModal).hide();
-                        FinanceApp.ui.showAlert('Categoria criada com sucesso!', 'success');
-
-                        // Reset form
-                        this.reset();
-                        this.classList.remove('was-validated');
-                    } else {
-                        const error = await response.text();
-                        FinanceApp.ui.showAlert('Erro ao criar categoria: ' + error, 'danger');
-                    }
-                } catch (error) {
-                    FinanceApp.ui.showAlert('Erro de conexão. Tente novamente.', 'danger');
-                } finally {
-                    FinanceApp.ui.enableButton(submitBtn);
-                }
+                await submitCategoryForm(this);
             });
         }
 
-        // Reset forms when modals are hidden
-        transactionModal?.addEventListener('hidden.bs.modal', function() {
-            const form = this.querySelector('form');
-            if (form) {
-                FinanceApp.form.reset(form);
-                // Reset to current date
-                const dateInput = form.querySelector('#transactionDate');
-                if (dateInput) {
-                    dateInput.value = new Date().toISOString().split('T')[0];
-                }
-            }
-        });
+        async function submitTransactionForm(form) {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            setButtonLoading(submitBtn, true);
 
-        categoryModal?.addEventListener('hidden.bs.modal', function() {
-            const form = this.querySelector('form');
-            if (form) {
-                FinanceApp.form.reset(form);
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/api/transactions', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    showSuccess('Transação salva com sucesso!');
+                    bootstrap.Modal.getInstance(transactionModal).hide();
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    const error = await response.text();
+                    showError('Erro ao salvar transação: ' + error);
+                }
+            } catch (error) {
+                showError('Erro de conexão. Tente novamente.');
+            } finally {
+                setButtonLoading(submitBtn, false);
             }
-        });
+        }
+
+        async function submitCategoryForm(form) {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            setButtonLoading(submitBtn, true);
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/api/categories', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const newCategory = await response.json();
+                    addCategoryToSelect(newCategory);
+                    showSuccess('Categoria criada com sucesso!');
+                    bootstrap.Modal.getInstance(categoryModal).hide();
+                } else {
+                    const error = await response.text();
+                    showError('Erro ao criar categoria: ' + error);
+                }
+            } catch (error) {
+                showError('Erro de conexão. Tente novamente.');
+            } finally {
+                setButtonLoading(submitBtn, false);
+            }
+        }
+
+        function validateField(field) {
+            const isValid = field.checkValidity();
+            field.classList.toggle('is-invalid', !isValid);
+            field.classList.toggle('is-valid', isValid);
+            return isValid;
+        }
+
+        function showValidationFeedback() {
+            const firstInvalid = transactionForm.querySelector('.is-invalid, :invalid');
+            if (firstInvalid) {
+                firstInvalid.focus();
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function addCategoryToSelect(category) {
+            const categorySelect = document.getElementById('transactionCategory');
+            if (categorySelect) {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                option.selected = true;
+                categorySelect.appendChild(option);
+
+                // Add animation
+                option.style.backgroundColor = '#10b981';
+                option.style.color = 'white';
+                setTimeout(() => {
+                    option.style.backgroundColor = '';
+                    option.style.color = '';
+                }, 2000);
+            }
+        }
+
+        function setButtonLoading(button, loading) {
+            if (loading) {
+                button.disabled = true;
+                button.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i>Salvando...';
+            } else {
+                button.disabled = false;
+                const isCategory = button.closest('#categoryModal');
+                button.innerHTML = isCategory ?
+                    '<i class="bi bi-plus-circle"></i> Criar Categoria' :
+                    '<i class="bi bi-check-circle"></i> Salvar Transação';
+            }
+        }
+
+        function resetTransactionForm() {
+            transactionForm?.reset();
+            transactionForm?.classList.remove('was-validated');
+
+            // Reset type toggle
+            document.querySelectorAll('.transaction-type-option').forEach(opt =>
+                opt.classList.remove('active')
+            );
+            document.querySelector('.transaction-type-option[data-type="ENTRADA"]')?.classList.add('active');
+            document.getElementById('transactionType').value = 'ENTRADA';
+
+            // Reset date
+            const dateInput = document.getElementById('transactionDate');
+            if (dateInput) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+
+            // Clear validation classes
+            transactionForm?.querySelectorAll('.is-valid, .is-invalid').forEach(el => {
+                el.classList.remove('is-valid', 'is-invalid');
+            });
+        }
+
+        function resetCategoryForm() {
+            categoryForm?.reset();
+            categoryForm?.classList.remove('was-validated');
+
+            // Clear validation classes
+            categoryForm?.querySelectorAll('.is-valid, .is-invalid').forEach(el => {
+                el.classList.remove('is-valid', 'is-invalid');
+            });
+        }
+
+        function showSuccess(message) {
+            // Criar toast de sucesso (ou usar sua biblioteca de notificação)
+            console.log('✅ ' + message);
+        }
+
+        function showError(message) {
+            // Criar toast de erro (ou usar sua biblioteca de notificação)
+            console.log('❌ ' + message);
+        }
+
+        // Global functions for external use
+        window.editTransaction = function(id) {
+            try {
+                const response = await FinanceApp.http.get(`/api/transactions/${id}`);
+                if (response && response.ok) {
+                    const transaction = await response.json();
+
+                    // Fill modal with transaction data
+                    const modal = document.getElementById('transactionModal');
+                    modal.querySelector('#transactionId').value = transaction.id;
+                    modal.querySelector('#transactionValue').value = transaction.value;
+                    modal.querySelector('#transactionDate').value = transaction.date;
+                    modal.querySelector('#transactionDescription').value = transaction.description || '';
+                    modal.querySelector('#transactionCategory').value = transaction.categoryId;
+
+                    // Set transaction type
+                    const typeRadio = modal.querySelector(`input[name="type"][value="${transaction.type}"]`);
+                    if (typeRadio) typeRadio.checked = true;
+
+                    // Update modal title
+                    modal.querySelector('#modalTitleText').textContent = 'Editar Transação';
+
+                    // Show modal
+                    new bootstrap.Modal(modal).show();
+                }
+            } catch (error) {
+                FinanceApp.ui.showAlert('Erro ao carregar transação', 'danger');
+            }
+            console.log('Editing transaction:', id);
+        };
     });
 </script>
 

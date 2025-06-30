@@ -71,6 +71,28 @@ public class TransactionController {
         }
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<TransactionResponse> getById(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        User user = getUserFromAuth(authentication);
+
+        Transaction tx = transactionService.findByIdAndUser(id, user)
+                .orElseThrow(() -> new RuntimeException("Transação não encontrada"));
+
+        TransactionResponse resp = new TransactionResponse(
+                tx.getId(),
+                tx.getType(),
+                tx.getValue(),
+                tx.getDate(),
+                tx.getDescription(),
+                tx.getCategory().getName()
+        );
+
+        return ResponseEntity.ok(resp);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<?> updateTransaction(@PathVariable Long id, @Valid @RequestBody TransactionRequest request,
                                                Authentication authentication) {
