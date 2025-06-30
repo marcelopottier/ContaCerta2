@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="alerts()">
+    <div th:if="${not #lists.isEmpty(successMessages)}">
+        <div th:each="msg : ${successMessages}"
+             class="alert alert-success alert-dismissible fade show"
+             role="alert">
+            <span th:text="${msg}">Sucesso!</span>
+            <button type="button" class="btn-close"
+                    data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+    </div>
+    <div th:if="${not #lists.isEmpty(errorMessages)}">
+        <div th:each="err : ${errorMessages}"
+             class="alert alert-danger alert-dismissible fade show"
+             role="alert">
+            <span th:text="${err}">Erro!</span>
+            <button type="button" class="btn-close"
+                    data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+    </div>
+</div>
+</html>

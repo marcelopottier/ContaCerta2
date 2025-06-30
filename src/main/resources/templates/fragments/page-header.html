@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="page-header(pageTitle, pageSubtitle)">
+    <div class="page-header mb-4">
+        <h1 th:text="${pageTitle}">Título da Página</h1>
+        <p class="text-muted" th:text="${pageSubtitle}">Subtítulo da Página</p>
+    </div>
+</div>
+</html>

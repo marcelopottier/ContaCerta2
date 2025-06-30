@@ -73,10 +73,7 @@
 <body>
 <div layout:fragment="content">
     <!-- Page Variables -->
-    <div th:with="pageTitle='Dashboard',
-                     pageSubtitle='Visão geral das suas finanças',
-                     breadcrumbs=${#lists.toList({'title': 'Dashboard', 'url': '/dashboard'})}">
-
+    <div>
         <div class="container-fluid">
             <!-- Statistics Cards -->
             <div class="row g-4 mb-4">
@@ -142,7 +139,8 @@
                         <div class="card-body d-flex align-items-center">
                             <div class="flex-grow-1">
                                 <div class="stats-label mb-1">Transações</div>
-                                <div class="stats-value" th:text="${dashboardData?.totalTransacoes ?: '0'}">
+                                <div class="stats-value"
+                                     th:text="${dashboardData['totalTransacoes'] != null ? dashboardData['totalTransacoes'] : '0'}">
                                     0
                                 </div>
                                 <small class="opacity-75">
@@ -278,7 +276,6 @@
             <button class="btn btn-primary quick-action-btn"
                     data-bs-toggle="modal"
                     data-bs-target="#transactionModal"
-                    data-bs-toggle="tooltip"
                     data-bs-placement="left"
                     title="Nova Transação">
                 <i class="bi bi-plus fs-4"></i>

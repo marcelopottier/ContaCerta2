@@ -36,17 +36,17 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link" th:href="@{/dashboard}" th:classappend="${#request.requestURI == '/dashboard' ? 'active' : ''}">
+                    <a class="nav-link" th:href="@{/dashboard}" th:classappend="${currentPath == '/dashboard' ? 'active' : ''}">
                         <i class="bi bi-speedometer2 me-1"></i>Dashboard
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" th:href="@{/transactions}" th:classappend="${#strings.contains(#request.requestURI, '/transactions') ? 'active' : ''}">
+                    <a class="nav-link" th:href="@{/transactions}" th:classappend="${#strings.contains(currentPath, '/transactions') ? 'active' : ''}">
                         <i class="bi bi-arrow-left-right me-1"></i>Transações
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" th:href="@{/categories}" th:classappend="${#strings.contains(#request.requestURI, '/categories') ? 'active' : ''}">
+                    <a class="nav-link" th:href="@{/categories}" th:classappend="${#strings.contains(currentPath, '/categories') ? 'active' : ''}">
                         <i class="bi bi-tags me-1"></i>Categorias
                     </a>
                 </li>

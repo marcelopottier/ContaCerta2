@@ -1,6 +1,6 @@
 /**
- * FinanceControl - Main JavaScript
- * Common functionality for all pages
+ * FinanceControl - Sistema de Autenticação JWT Unificado
+ * Versão refatorada para segurança e consistência
  */
 
 // Global app object
@@ -10,50 +10,165 @@ window.FinanceApp = {
         apiBaseUrl: '/api',
         dateFormat: 'dd/MM/yyyy',
         currency: 'BRL',
-        locale: 'pt-BR'
+        locale: 'pt-BR',
+        tokenKey: 'authToken'
     },
 
     // Authentication utilities
     auth: {
-        getToken: () => localStorage.getItem('authToken'),
+        // Obter token do localStorage OU cookie
+        getToken: () => {
+            // Primeiro tenta localStorage
+            let token = localStorage.getItem(FinanceApp.config.tokenKey);
 
+            // Se não tiver no localStorage, tenta cookie
+            if (!token) {
+                token = FinanceApp.auth.getCookieToken();
+            }
+
+            return token;
+        },
+
+        // Obter token do cookie
+        getCookieToken: () => {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === FinanceApp.config.tokenKey) {
+                    return value;
+                }
+            }
+            return null;
+        },
+
+        // Definir token (localStorage + cookie)
+        setToken: (token) => {
+            // Salvar no localStorage
+            localStorage.setItem(FinanceApp.config.tokenKey, token);
+
+            // Salvar no cookie (será sobrescrito pelo backend, mas garante consistência)
+            document.cookie = `${FinanceApp.config.tokenKey}=${token}; path=/; max-age=86400; SameSite=Lax`;
+        },
+
+        // Obter dados do usuário do localStorage
         getUserData: () => {
             const userData = localStorage.getItem('userData');
             return userData ? JSON.parse(userData) : null;
         },
 
+        // Definir dados do usuário
         setUserData: (data) => {
             localStorage.setItem('userData', JSON.stringify(data));
         },
 
-        isAuthenticated: () => !!FinanceApp.auth.getToken(),
+        // Verificar se está autenticado
+        isAuthenticated: () => {
+            const token = FinanceApp.auth.getToken();
+            if (!token) return false;
 
-        logout: () => {
-            if (confirm('Tem certeza que deseja sair?')) {
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('userData');
+            // Verificar se o token não está expirado
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const now = Date.now() / 1000;
+                return payload.exp > now;
+            } catch (e) {
+                return false;
+            }
+        },
+
+        // Obter usuário atual
+        getCurrentUser: () => {
+            const token = FinanceApp.auth.getToken();
+            if (!token) return null;
+
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return {
+                    email: payload.sub,
+                    name: FinanceApp.auth.getUserData()?.name || 'Usuário'
+                };
+            } catch (e) {
+                return null;
+            }
+        },
+
+        // Login programático
+        login: async (email, password) => {
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Salvar token e dados do usuário
+                    FinanceApp.auth.setToken(data.token);
+                    FinanceApp.auth.setUserData({
+                        name: data.name,
+                        email: data.email
+                    });
+
+                    return { success: true, data };
+                } else {
+                    const error = await response.text();
+                    return { success: false, error };
+                }
+            } catch (error) {
+                return { success: false, error: 'Erro de conexão' };
+            }
+        },
+
+        // Logout
+        logout: async () => {
+            try {
+                // Chamar API de logout
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${FinanceApp.auth.getToken()}`
+                    }
+                });
+            } catch (e) {
+                console.warn('Erro ao fazer logout no servidor:', e);
+            } finally {
+                // Limpar dados locais
+                FinanceApp.auth.clearAuth();
+
+                // Redirecionar para login
                 window.location.href = '/login';
             }
+        },
+
+        // Limpar autenticação
+        clearAuth: () => {
+            localStorage.removeItem(FinanceApp.config.tokenKey);
+            localStorage.removeItem('userData');
+
+            // Limpar cookie
+            document.cookie = `${FinanceApp.config.tokenKey}=; path=/; max-age=0`;
+        },
+
+        // Verificar autenticação e redirecionar se necessário
+        requireAuth: () => {
+            if (!FinanceApp.auth.isAuthenticated()) {
+                window.location.href = '/login';
+                return false;
+            }
+            return true;
         }
     },
 
     // HTTP utilities
     http: {
-        get: async (url) => {
-            return FinanceApp.http.request('GET', url);
-        },
-
-        post: async (url, data) => {
-            return FinanceApp.http.request('POST', url, data);
-        },
-
-        put: async (url, data) => {
-            return FinanceApp.http.request('PUT', url, data);
-        },
-
-        delete: async (url) => {
-            return FinanceApp.http.request('DELETE', url);
-        },
+        get: async (url) => FinanceApp.http.request('GET', url),
+        post: async (url, data) => FinanceApp.http.request('POST', url, data),
+        put: async (url, data) => FinanceApp.http.request('PUT', url, data),
+        delete: async (url) => FinanceApp.http.request('DELETE', url),
 
         request: async (method, url, data = null) => {
             const options = {
@@ -63,13 +178,13 @@ window.FinanceApp = {
                 }
             };
 
-            // Add auth token if available
+            // Adicionar token de autenticação
             const token = FinanceApp.auth.getToken();
             if (token) {
                 options.headers.Authorization = `Bearer ${token}`;
             }
 
-            // Add body for POST/PUT requests
+            // Adicionar body para POST/PUT
             if (data && (method === 'POST' || method === 'PUT')) {
                 options.body = JSON.stringify(data);
             }
@@ -79,7 +194,12 @@ window.FinanceApp = {
 
                 // Handle 401 Unauthorized
                 if (response.status === 401) {
-                    FinanceApp.auth.logout();
+                    FinanceApp.auth.clearAuth();
+
+                    // Se não estiver na página de login, redirecionar
+                    if (!window.location.pathname.includes('/login')) {
+                        window.location.href = '/login';
+                    }
                     return null;
                 }
 
@@ -101,11 +221,11 @@ window.FinanceApp = {
             }
         },
 
-        showAlert: (message, type = 'info', container = null) => {
-            const alertContainer = container || document.querySelector('.container');
-            if (!alertContainer) return;
-
+        showAlert: (message, type = 'info', duration = 5000) => {
+            // Criar alert dinamicamente
+            const alertContainer = document.querySelector('.container') || document.body;
             const alertId = 'alert-' + Date.now();
+
             const alertHtml = `
                 <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
                     <i class="bi bi-${FinanceApp.ui.getAlertIcon(type)} me-2"></i>
@@ -114,17 +234,19 @@ window.FinanceApp = {
                 </div>
             `;
 
-            // Insert alert at the beginning of container
+            // Inserir no topo do container
             alertContainer.insertAdjacentHTML('afterbegin', alertHtml);
 
-            // Auto-dismiss after 5 seconds
-            setTimeout(() => {
-                const alert = document.getElementById(alertId);
-                if (alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                }
-            }, 5000);
+            // Auto-dismiss
+            if (duration > 0) {
+                setTimeout(() => {
+                    const alert = document.getElementById(alertId);
+                    if (alert) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                }, duration);
+            }
         },
 
         getAlertIcon: (type) => {
@@ -138,23 +260,54 @@ window.FinanceApp = {
         },
 
         showConfirmModal: (message, onConfirm, title = 'Confirmar ação') => {
-            const modal = document.getElementById('confirmModal');
-            if (!modal) return;
-
-            // Set modal content
-            modal.querySelector('.modal-title').innerHTML = `
-                <i class="bi bi-exclamation-triangle text-warning me-2"></i>${title}
+            // Criar modal de confirmação dinamicamente
+            const modalHtml = `
+                <div class="modal fade" id="confirmModalDynamic" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                                    ${title}
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>${message}</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="button" class="btn btn-danger" id="confirmButton">Confirmar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             `;
-            modal.querySelector('#confirmModalMessage').textContent = message;
 
-            // Set up confirm button
-            const confirmBtn = modal.querySelector('#confirmModalButton');
+            // Remover modal anterior se existir
+            const existingModal = document.getElementById('confirmModalDynamic');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Adicionar ao body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Configurar eventos
+            const modal = document.getElementById('confirmModalDynamic');
+            const confirmBtn = modal.querySelector('#confirmButton');
+
             confirmBtn.onclick = () => {
                 onConfirm();
                 bootstrap.Modal.getInstance(modal).hide();
             };
 
-            // Show modal
+            // Remover modal quando fechado
+            modal.addEventListener('hidden.bs.modal', () => {
+                modal.remove();
+            });
+
+            // Mostrar modal
             new bootstrap.Modal(modal).show();
         },
 
@@ -187,7 +340,7 @@ window.FinanceApp = {
 
         date: (date) => {
             if (typeof date === 'string') {
-                date = new Date(date + 'T00:00:00'); // Add time to avoid timezone issues
+                date = new Date(date + 'T00:00:00');
             }
             return new Intl.DateTimeFormat(FinanceApp.config.locale).format(date);
         },
@@ -232,39 +385,11 @@ window.FinanceApp = {
         reset: (form) => {
             form.reset();
             form.classList.remove('was-validated');
-        },
-
-        setFieldError: (fieldName, message) => {
-            const field = document.querySelector(`[name="${fieldName}"]`);
-            if (field) {
-                field.classList.add('is-invalid');
-
-                // Remove existing feedback
-                const existingFeedback = field.parentNode.querySelector('.invalid-feedback');
-                if (existingFeedback) {
-                    existingFeedback.remove();
-                }
-
-                // Add new feedback
-                const feedback = document.createElement('div');
-                feedback.className = 'invalid-feedback';
-                feedback.textContent = message;
-                field.parentNode.appendChild(feedback);
-            }
-        },
-
-        clearErrors: (form) => {
-            form.querySelectorAll('.is-invalid').forEach(field => {
-                field.classList.remove('is-invalid');
-            });
-            form.querySelectorAll('.invalid-feedback').forEach(feedback => {
-                feedback.remove();
-            });
         }
     }
 };
 
-// Global functions for backward compatibility and template usage
+// Funções globais para compatibilidade
 window.logout = FinanceApp.auth.logout;
 window.showConfirm = FinanceApp.ui.showConfirmModal;
 window.formatCurrency = FinanceApp.format.currency;
@@ -272,39 +397,52 @@ window.formatDate = FinanceApp.format.date;
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize tooltips
+    console.log('FinanceControl app initialized');
+
+    // Verificar autenticação nas páginas protegidas
+    const protectedPages = ['/dashboard', '/transactions', '/categories', '/profile'];
+    const currentPage = window.location.pathname;
+
+    if (protectedPages.includes(currentPage)) {
+        if (!FinanceApp.auth.isAuthenticated()) {
+            console.warn('Usuário não autenticado, redirecionando para login');
+            window.location.href = '/login';
+            return;
+        }
+    }
+
+    // Verificar se já está logado nas páginas de login/registro
+    if (['/login', '/register'].includes(currentPage)) {
+        if (FinanceApp.auth.isAuthenticated()) {
+            console.log('Usuário já autenticado, redirecionando para dashboard');
+            window.location.href = '/dashboard';
+            return;
+        }
+    }
+
+    // Inicializar tooltips
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
-    // Initialize popovers
+    // Inicializar popovers
     const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
     popoverTriggerList.map(function (popoverTriggerEl) {
         return new bootstrap.Popover(popoverTriggerEl);
     });
 
-    // Auto-dismiss alerts after 5 seconds
-    document.querySelectorAll('.alert:not(.alert-permanent)').forEach(alert => {
-        setTimeout(() => {
-            if (alert.classList.contains('show')) {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            }
-        }, 5000);
-    });
-
-    // Handle form submissions with loading states
+    // Configurar formulários para mostrar loading
     document.querySelectorAll('form').forEach(form => {
         form.addEventListener('submit', function(e) {
             const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn && !submitBtn.disabled) {
+            if (submitBtn && !submitBtn.disabled && form.checkValidity()) {
                 FinanceApp.ui.disableButton(submitBtn);
             }
         });
     });
 
-    // Fade in animations for cards
+    // Animações de entrada
     document.querySelectorAll('.card, .alert').forEach((element, index) => {
         element.style.opacity = '0';
         element.style.transform = 'translateY(20px)';
@@ -316,7 +454,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, index * 100);
     });
 
-    // Currency input formatting
+    // Formatação de inputs de moeda
     document.querySelectorAll('input[data-currency]').forEach(input => {
         input.addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
@@ -325,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Auto-resize textareas
+    // Auto-resize para textareas
     document.querySelectorAll('textarea[data-auto-resize]').forEach(textarea => {
         textarea.style.overflow = 'hidden';
 
@@ -335,10 +473,8 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         textarea.addEventListener('input', resize);
-        resize(); // Initial resize
+        resize();
     });
-
-    console.log('FinanceControl app initialized');
 });
 
 // Handle online/offline status
@@ -350,7 +486,48 @@ window.addEventListener('offline', () => {
     FinanceApp.ui.showAlert('Você está offline. Algumas funcionalidades podem não estar disponíveis.', 'warning');
 });
 
-// Prevent form resubmission on page refresh
+// Interceptar refreshs para prevenir resubmissões
 if (window.history.replaceState && window.history.state !== null) {
     window.history.replaceState(null, null, window.location.href);
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Animações de entrada para formulários
+    const authCard = document.querySelector('.auth-card');
+    if (authCard) {
+        authCard.style.opacity = '0';
+        authCard.style.transform = 'translateY(30px)';
+
+        setTimeout(() => {
+            authCard.style.transition = 'all 0.6s ease';
+            authCard.style.opacity = '1';
+            authCard.style.transform = 'translateY(0)';
+        }, 100);
+    }
+
+    // Animações de foco nos inputs
+    document.querySelectorAll('.form-floating input').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.classList.add('focused');
+        });
+
+        input.addEventListener('blur', function() {
+            if (!this.value) {
+                this.parentElement.classList.remove('focused');
+            }
+        });
+    });
+
+    // Enter key para submeter formulário
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            const form = document.querySelector('form');
+            if (form) {
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn && !submitBtn.disabled) {
+                    form.dispatchEvent(new Event('submit'));
+                }
+            }
+        }
+    });
+});

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="breadcrumb(breadcrumbs, pageTitle, pageSubtitle)">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"
+                th:each="bc : ${breadcrumbs}"
+                th:classappend="${bc.url == currentPath} ? 'active' : ''">
+                <a th:if="${bc.url != currentPath}"
+                   th:href="@{${bc.url}}"
+                   th:text="${bc.title}"></a>
+                <span th:if="${bc.url == currentPath}"
+                      th:text="${bc.title}"></span>
+            </li>
+        </ol>
+    </nav>
+    <div class="page-header mb-4">
+        <h1 th:text="${pageTitle}">Página</h1>
+        <p class="text-muted" th:text="${pageSubtitle}">Subtítulo</p>
+    </div>
+</div>
+</html>
