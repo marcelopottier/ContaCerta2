@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">FinanceControl</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link th:href="@{/css/main.css}" rel="stylesheet">
+    <!-- Chart.js for dashboards -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Page specific CSS -->
+    <th:block layout:fragment="css"></th:block>
+    <style th:replace="~{fragments/transaction-modal :: transaction-modal-styles}"></style>
+</head>
+<body class="bg-light">
+<!-- Navbar (hidden on public routes) -->
+<nav th:if="${!(currentPath == '/' or currentPath == '/login' or currentPath == '/register')}"
+     th:replace="~{fragments/navbar :: navbar}"></nav>
+
+<!-- Main Content -->
+<main class="main-content">
+    <!-- Page Content -->
+    <div layout:fragment="content">
+        <!-- Default content will be replaced -->
+    </div>
+</main>
+
+<!-- Footer -->
+<div th:replace="~{fragments/transaction-modal :: transaction-modal}"></div>
+
+<!-- Loading Spinner (Global) -->
+<div id="loadingSpinner" class="d-none position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-white bg-opacity-75" style="z-index: 9999;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregando...</span>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Main JavaScript -->
+<script th:src="@{/js/main.js}"></script>
+
+
+<!-- Script global para abrir o modal -->
+<script>
+    // Função global para abrir modal de nova transação
+    function openTransactionModal(type = 'ENTRADA') {
+        const modal = new bootstrap.Modal(document.getElementById('transactionModal'));
+
+        // Definir tipo se especificado
+        if (type) {
+            const typeOption = document.querySelector(`.transaction-type-option[data-type="${type}"]`);
+            if (typeOption) {
+                typeOption.click();
+            }
+        }
+
+        modal.show();
+    }
+
+    // Função para abrir modal de edição
+    function editTransaction(id) {
+        // Implementar lógica de edição
+        console.log('Editando transação:', id);
+        openTransactionModal();
+    }
+
+    // Atalhos de teclado
+    document.addEventListener('keydown', function(e) {
+        // Ctrl + N = Nova transação
+        if (e.ctrlKey && e.key === 'n') {
+            e.preventDefault();
+            openTransactionModal();
+        }
+
+        // Escape = Fechar modal
+        if (e.key === 'Escape') {
+            const modals = document.querySelectorAll('.modal.show');
+            modals.forEach(modal => {
+                bootstrap.Modal.getInstance(modal)?.hide();
+            });
+        }
+    });
+</script>
+<script type="module" defer>
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getStorage, ref as storageRef, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyACq-bGXIZOxulg8A8ze26UOVW4n5CCK0A",
+        authDomain: "reactchat-74e4b.firebaseapp.com",
+        projectId: "reactchat-74e4b",
+        storageBucket: "reactchat-74e4b.appspot.com",
+        messagingSenderId: "634807544486",
+        appId: "1:634807544486:web:c1106a9c760ea4f1c6e267"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const storage = getStorage(app);
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        const container = document.getElementById('navAvatarContainer');
+        if (!container) {
+            console.warn('[AVATAR] navAvatarContainer não encontrado na DOM.');
+            return;
+        }
+
+        const fileName = container.dataset.avatarFile;
+        console.log('[AVATAR] fileName:', fileName);
+
+        if (fileName) {
+            try {
+                const avatarReference = storageRef(storage, `avatars/${fileName}`);
+                const url = await getDownloadURL(avatarReference);
+                const img = document.getElementById('navAvatarImg');
+                img.src = url;
+                img.style.display = 'block';
+
+                document.getElementById('navAvatarIcon').style.display = 'none';
+
+                console.log('[AVATAR] Avatar carregado:', url);
+            } catch (e) {
+                console.warn('[AVATAR] Erro ao carregar avatar:', e);
+            }
+        } else {
+            console.warn('[AVATAR] fileName está vazio ou não definido.');
+        }
+    });
+</script>
+
+<!-- Page specific JavaScript -->
+<th:block layout:fragment="javascript"></th:block>
+</body>
+</html>
