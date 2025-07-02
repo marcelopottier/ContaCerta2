@@ -1,5 +1,6 @@
 package com.univille.controle_financeiro.controller;
 
+import com.univille.controle_financeiro.dto.CategoryDTO;
 import com.univille.controle_financeiro.dto.CategoryRequest;
 import com.univille.controle_financeiro.entity.Category;
 import com.univille.controle_financeiro.entity.User;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/categories")
@@ -24,10 +26,14 @@ public class CategoryController {
     private UserService userService;
 
     @GetMapping
-    public ResponseEntity<List<Category>> getCategories(Authentication authentication) {
-        User user = getUserFromAuth(authentication);
-        List<Category> categories = categoryService.findByUser(user);
-        return ResponseEntity.ok(categories);
+    public List<CategoryDTO> getCategories(Authentication auth) {
+        User user = userService.findByEmail(auth.getName())
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        return categoryService.findByUser(user)
+                .stream()
+                .map(CategoryDTO::fromEntity)
+                .collect(Collectors.toList());
     }
 
     @PostMapping

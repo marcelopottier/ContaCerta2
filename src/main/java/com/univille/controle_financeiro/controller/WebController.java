@@ -77,6 +77,11 @@ public class WebController {
         return "register";
     }
 
+    @GetMapping("/error")
+    public String error(Model model) {
+        return "login";
+    }
+
     /**
      * Processar registro via form (alternativa ao API)
      */
@@ -224,12 +229,31 @@ public class WebController {
         return "redirect:/login";
     }
 
-    /**
-     * Página de erro
-     */
-    @GetMapping("/error")
-    public String error() {
-        return "error";
+
+    @PostMapping("/categories")
+    public String saveCategory(@RequestParam(required = false) Long id,
+                               @RequestParam String name,
+                               @RequestParam(required = false) String color,
+                               Authentication authentication,
+                               RedirectAttributes redirectAttributes) {
+        User user = getCurrentUser(authentication);
+
+        try {
+            if (id != null) {
+                // Edição
+                categoryService.updateCategory(id, name, user);
+                redirectAttributes.addFlashAttribute("successMessage", "Categoria atualizada com sucesso!");
+            } else {
+                // Criação
+                categoryService.createCategory(name, user);
+                redirectAttributes.addFlashAttribute("successMessage", "Categoria criada com sucesso!");
+            }
+
+            return "redirect:/categories";
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/categories";
+        }
     }
 
     // Métodos privados auxiliares

@@ -477,9 +477,6 @@
     <!-- Transaction Modal -->
     <div th:replace="~{fragments/transaction-modal :: transaction-modal}"></div>
 
-    <!-- Category Modal for Quick Add -->
-    <div th:replace="~{fragments/transaction-modal :: category-modal}"></div>
-
     <!-- Confirm Delete Modal -->
     <div th:replace="~{fragments/components :: confirm-modal}"></div>
 </div>
@@ -669,9 +666,6 @@
             }
         }
     </script>
-
-    <!-- Include transaction modal script -->
-    <script th:replace="~{fragments/transaction-modal :: transaction-modal-js}"></script>
 </th:block>
 </body>
 </html>

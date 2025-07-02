@@ -137,18 +137,17 @@
                                             <div class="action-buttons mt-3">
                                                 <div class="d-flex gap-1">
                                                     <button class="btn btn-outline-primary btn-sm flex-fill"
-                                                            data-category-id="[[${category.id}]]"
-                                                            data-category-name="[[${category.name}]]"
+                                                            th:attr="data-category-id=${category.id}, data-category-name=${category.name}"
                                                             onclick="editCategory(this)">
                                                         <i class="bi bi-pencil me-1"></i>Editar
                                                     </button>
                                                     <button class="btn btn-outline-danger btn-sm"
-                                                            data-category-id="[[${category.id}]]"
-                                                            data-category-name="[[${category.name}]]"
+                                                            th:attr="data-category-id=${category.id}, data-category-name=${category.name}"
                                                             onclick="deleteCategory(this)"
                                                             th:disabled="${category.transactions?.size() > 0}">
                                                         <i class="bi bi-trash me-1"></i>
                                                     </button>
+
                                                 </div>
                                             </div>
                                         </div>
@@ -276,74 +275,36 @@
 <th:block layout:fragment="javascript">
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            let isEditMode = false;
             setupCategoryModal();
             setupSearch();
             setupColorPicker();
         });
 
         function setupCategoryModal() {
-            const modal = document.getElementById('categoryModal');
-            const form = modal.querySelector('form');
+    const modal = document.getElementById('categoryModal');
+    const form = modal.querySelector('form');
 
-            // Reset form when modal is shown
-            modal.addEventListener('show.bs.modal', function() {
-                form.reset();
-                form.classList.remove('was-validated');
-                document.getElementById('categoryId').value = '';
-                document.getElementById('categoryModalTitle').textContent = 'Nova Categoria';
-                document.getElementById('categoryModalAction').textContent = 'Salvar Categoria';
+    modal.addEventListener('show.bs.modal', function () {
+        if (!isEditMode) {
+            form.reset();
+            form.classList.remove('was-validated');
+            document.getElementById('categoryId').value = '';
+            document.getElementById('categoryModalTitle').textContent = 'Nova Categoria';
+            document.getElementById('categoryModalAction').textContent = 'Salvar Categoria';
 
-                // Reset color selection
-                document.querySelectorAll('.color-option').forEach(option => {
-                    option.classList.remove('selected');
-                });
-                document.querySelector('.color-option[data-color="#6f42c1"]').classList.add('selected');
-                document.getElementById('categoryColor').value = '#6f42c1';
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.classList.remove('selected');
             });
-
-            // Form submission
-            form.addEventListener('submit', async function(e) {
-                e.preventDefault();
-
-                if (!this.checkValidity()) {
-                    e.stopPropagation();
-                    this.classList.add('was-validated');
-                    return;
-                }
-
-                const submitBtn = this.querySelector('button[type="submit"]');
-                FinanceApp.ui.disableButton(submitBtn);
-
-                try {
-                    const formData = FinanceApp.form.serialize(this);
-                    const isEdit = document.getElementById('categoryId').value;
-
-                    let response;
-                    if (isEdit) {
-                        response = await FinanceApp.http.put(`/api/categories/${isEdit}`, formData);
-                    } else {
-                        response = await FinanceApp.http.post('/api/categories', formData);
-                    }
-
-                    if (response && response.ok) {
-                        bootstrap.Modal.getInstance(modal).hide();
-                        FinanceApp.ui.showAlert(
-                            isEdit ? 'Categoria atualizada com sucesso!' : 'Categoria criada com sucesso!',
-                            'success'
-                        );
-
-                        setTimeout(() => window.location.reload(), 1000);
-                    } else {
-                        const error = await response.text();
-                        FinanceApp.ui.showAlert('Erro ao salvar categoria: ' + error, 'danger');
-                    }
-                } catch (error) {
-                    FinanceApp.ui.showAlert('Erro de conexão. Tente novamente.', 'danger');
-                } finally {
-                    FinanceApp.ui.enableButton(submitBtn);
-                }
-            });
+            document.querySelector('.color-option[data-color="#6f42c1"]').classList.add('selected');
+            document.getElementById('categoryColor').value = '#6f42c1';
         }
+    });
+
+    modal.addEventListener('hidden.bs.modal', function () {
+        isEditMode = false; // reset flag
+    });
+}
 
         function setupSearch() {
             const searchInput = document.getElementById('searchCategories');
@@ -375,30 +336,25 @@
                 });
             });
         }
+    function editCategory(button) {
+    const id = button.getAttribute('data-category-id');
+    const name = button.getAttribute('data-category-name');
 
-        function editCategory(button) {
-           // Lê os atributos data do botão
-           const id = button.getAttribute('data-category-id');
-           const name = button.getAttribute('data-category-name');
-            
-           const modal = document.getElementById('categoryModal');
-           const form = modal.querySelector('form');
-            
-           // Set form action for editing
-           form.action = `/categories/${id}`;
-            
-           // Preenche os dados no modal
-           document.getElementById('categoryId').value = id;
-           document.getElementById('categoryName').value = name;
-           document.getElementById('categoryModalTitle').textContent = 'Editar Categoria';
-           document.getElementById('categoryModalAction').textContent = 'Atualizar Categoria';
-            
-           // Abrir modal
-           new bootstrap.Modal(modal).show();
-        }
+    isEditMode = true;
+
+    const modal = document.getElementById('categoryModal');
+    const form = modal.querySelector('form');
+
+    document.getElementById('categoryId').value = id;
+    document.getElementById('categoryName').value = name;
+    document.getElementById('categoryModalTitle').textContent = 'Editar Categoria';
+    document.getElementById('categoryModalAction').textContent = 'Atualizar Categoria';
+
+    new bootstrap.Modal(modal).show();
+}
 
 
-        function deleteCategory(button) {
+    function deleteCategory(button) {
     const id = button.getAttribute('data-category-id');
     const name = button.getAttribute('data-category-name');
     FinanceApp.ui.showConfirmModal(
