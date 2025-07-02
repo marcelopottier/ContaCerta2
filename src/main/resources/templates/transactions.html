@@ -154,7 +154,7 @@
                     Filtros ativos aplicados
                 </div>
             </div>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transactionModal">
+            <button class="btn btn-primary" onclick="newTransaction()">
                 <i class="bi bi-plus me-1"></i>Nova Transação
             </button>
         </div>
@@ -476,23 +476,253 @@
 
     <!-- Transaction Modal -->
     <div th:replace="~{fragments/transaction-modal :: transaction-modal}"></div>
-
+    <script>
+        console.log('=== TESTE: Script da página transactions carregado ===');
+        console.log('Modal existe?', !!document.getElementById('transactionModal'));
+    </script>
     <!-- Confirm Delete Modal -->
     <div th:replace="~{fragments/components :: confirm-modal}"></div>
 </div>
 
 <th:block layout:fragment="javascript">
     <script>
+        console.log('=== INÍCIO DO SCRIPT TRANSACTIONS ===');
+
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM carregado - transactions.html');
             setupQuickFilters();
             setupTableInteractions();
             setupFormFilters();
+            setupTransactionForm();
+
+            // Testar carregamento de categorias
+            console.log('Testando carregamento de categorias...');
+            loadCategoriesForModal();
         });
+
+        // Setup do formulário de transação
+        function setupTransactionForm() {
+            const form = document.getElementById('transactionForm');
+            const modal = document.getElementById('transactionModal');
+
+            if (!form) {
+                console.warn('Formulário de transação não encontrado');
+                return;
+            }
+
+            // Definir data padrão como hoje
+            const dateInput = document.getElementById('transactionDate');
+            if (dateInput && !dateInput.value) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+
+            // Event listener para submit do form
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                if (!form.checkValidity()) {
+                    form.classList.add('was-validated');
+                    return;
+                }
+
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Salvando...';
+
+                const formData = new FormData(form);
+                const data = {
+                    type: formData.get('type'),
+                    value: parseFloat(formData.get('value')),
+                    date: formData.get('date'),
+                    categoryId: parseInt(formData.get('categoryId')),
+                    description: formData.get('description') || null
+                };
+
+                const isEdit = formData.get('id');
+                const url = isEdit ? `/api/transactions/${isEdit}` : '/api/transactions';
+                const method = isEdit ? 'PUT' : 'POST';
+
+                try {
+                    const response = await fetch(url, {
+                        method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]')?.value || ''
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (response.ok) {
+                        bootstrap.Modal.getInstance(modal).hide();
+
+                        if (typeof FinanceApp !== 'undefined' && FinanceApp.ui) {
+                            const message = isEdit ? 'Transação atualizada!' : 'Transação criada!';
+                            FinanceApp.ui.showAlert(message, 'success');
+                        }
+
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        const error = await response.text();
+                        alert('Erro ao salvar: ' + error);
+                    }
+                } catch (error) {
+                    console.error('Erro:', error);
+                    alert('Erro de conexão');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
+            });
+
+            // Reset form when modal is hidden
+            if (modal) {
+                modal.addEventListener('hidden.bs.modal', function() {
+                    form.reset();
+                    form.classList.remove('was-validated');
+
+                    // Reset date to today
+                    if (dateInput) {
+                        dateInput.value = new Date().toISOString().split('T')[0];
+                    }
+                });
+            }
+        }
+
+        // Função para carregar categorias na modal
+        async function loadCategoriesForModal() {
+            console.log('=== loadCategoriesForModal executada ===');
+
+            const select = document.getElementById('transactionCategory');
+            console.log('Select encontrado:', !!select);
+
+            if (!select) {
+                console.error('Select transactionCategory não encontrado!');
+                return;
+            }
+
+            // Mostrar estado de carregamento
+            select.innerHTML = '<option value="">Carregando categorias...</option>';
+            select.disabled = true;
+
+            try {
+                console.log('Fazendo requisição para /api/categories');
+
+                const response = await fetch('/api/categories', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('Response:', {
+                    status: response.status,
+                    ok: response.ok,
+                    statusText: response.statusText
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const categories = await response.json();
+                console.log('Categorias recebidas:', categories);
+
+                select.innerHTML = '<option value="">Escolha uma categoria</option>';
+
+                if (categories && Array.isArray(categories) && categories.length > 0) {
+                    categories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.id;
+                        option.textContent = category.name;
+
+                        // Adicionar cor como data attribute
+                        if (category.color) {
+                            option.setAttribute('data-color', category.color);
+                            option.style.color = category.color;
+                        }
+
+                        select.appendChild(option);
+                    });
+                    console.log(`${categories.length} categorias adicionadas ao select`);
+                } else {
+                    select.innerHTML = '<option value="" disabled>Nenhuma categoria encontrada</option>';
+                    console.warn('Nenhuma categoria retornada');
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar categorias:', error);
+                select.innerHTML = '<option value="" disabled>Erro ao carregar categorias</option>';
+
+                // Se for erro de autenticação, redirecionar
+                if (error.message.includes('401') || error.message.includes('403')) {
+                    alert('Sessão expirada. Redirecionando para login...');
+                    window.location.href = '/login';
+                }
+            } finally {
+                select.disabled = false;
+            }
+        }
+
+        // Função para editar transação
+        window.editTransaction = async function(id) {
+            console.log('Editando transação:', id);
+
+            // Garantir que as categorias estão carregadas
+            await loadCategoriesForModal();
+
+            try {
+                const response = await fetch(`/api/transactions/${id}`);
+                if (!response.ok) throw new Error('Erro ao carregar transação');
+
+                const transaction = await response.json();
+                console.log('Dados da transação:', transaction);
+
+                // Preencher formulário
+                document.getElementById('transactionId').value = transaction.id;
+                document.getElementById('transactionType').value = transaction.type;
+                document.getElementById('transactionValue').value = transaction.value;
+                document.getElementById('transactionDate').value = transaction.date;
+                document.getElementById('transactionCategory').value = transaction.categoryId || transaction.category?.id;
+                document.getElementById('transactionDescription').value = transaction.description || '';
+
+                // Alterar título da modal
+                const modalTitle = document.querySelector('#transactionModal .modal-title');
+                if (modalTitle) {
+                    modalTitle.innerHTML = '<i class="bi bi-pencil-square me-2"></i>Editar Transação';
+                }
+
+                // Mostrar modal
+                const modal = new bootstrap.Modal(document.getElementById('transactionModal'));
+                modal.show();
+
+            } catch (error) {
+                console.error('Erro ao editar transação:', error);
+                alert('Erro ao carregar dados da transação: ' + error.message);
+            }
+        }
+
+        // Função para nova transação
+        window.newTransaction = function() {
+            // Reset title
+            const modalTitle = document.querySelector('#transactionModal .modal-title');
+            if (modalTitle) {
+                modalTitle.innerHTML = '<i class="bi bi-plus-circle me-2"></i>Nova Transação';
+            }
+
+            // Garantir que as categorias estão carregadas
+            loadCategoriesForModal();
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('transactionModal'));
+            modal.show();
+        }
 
         function setupFormFilters() {
             // Auto-submit form when filters change
             const filterElements = ['categoryFilter', 'typeFilter'];
-            
+
             filterElements.forEach(id => {
                 const element = document.getElementById(id);
                 if (element) {
@@ -628,43 +858,49 @@
         }
 
         function deleteTransaction(id, description) {
-            FinanceApp.ui.showConfirmModal(
-                `Tem certeza que deseja excluir a transação "${description}"?`,
-                async function() {
-                    try {
-                        const response = await FinanceApp.http.delete(`/api/transactions/${id}`);
+            if (typeof FinanceApp !== 'undefined' && FinanceApp.ui) {
+                FinanceApp.ui.showConfirmModal(
+                    `Tem certeza que deseja excluir a transação "${description}"?`,
+                    async function() {
+                        try {
+                            const response = await FinanceApp.http.delete(`/api/transactions/${id}`);
 
-                        if (response && response.ok) {
-                            FinanceApp.ui.showAlert('Transação excluída com sucesso!', 'success');
-                            setTimeout(() => window.location.reload(), 1000);
-                        } else {
-                            const error = await response.text();
-                            FinanceApp.ui.showAlert('Erro ao excluir transação: ' + error, 'danger');
+                            if (response && response.ok) {
+                                FinanceApp.ui.showAlert('Transação excluída com sucesso!', 'success');
+                                setTimeout(() => window.location.reload(), 1000);
+                            } else {
+                                const error = await response.text();
+                                FinanceApp.ui.showAlert('Erro ao excluir transação: ' + error, 'danger');
+                            }
+                        } catch (error) {
+                            FinanceApp.ui.showAlert('Erro de conexão. Tente novamente.', 'danger');
                         }
-                    } catch (error) {
-                        FinanceApp.ui.showAlert('Erro de conexão. Tente novamente.', 'danger');
-                    }
-                },
-                'Excluir Transação'
-            );
+                    },
+                    'Excluir Transação'
+                );
+            } else {
+                // Fallback se FinanceApp não estiver disponível
+                if (confirm(`Tem certeza que deseja excluir a transação "${description}"?`)) {
+                    fetch(`/api/transactions/${id}`, { method: 'DELETE' })
+                        .then(() => window.location.reload())
+                        .catch(error => alert('Erro ao excluir transação'));
+                }
+            }
         }
 
         function exportData(format) {
             const params = new URLSearchParams(window.location.search);
             params.append('export', format);
-
             window.open(`/transactions/export?${params.toString()}`, '_blank');
         }
 
-        // Global function for edit (if needed by external scripts)
-        function editTransaction(id) {
-            // Implementation should be provided by transaction-modal script
-            if (typeof window.editTransaction === 'function') {
-                window.editTransaction(id);
-            } else {
-                console.warn('editTransaction function not found');
-            }
+        // Teste manual
+        window.testCategories = function() {
+            console.log('=== TESTE MANUAL ===');
+            loadCategoriesForModal();
         }
+
+        console.log('=== SCRIPT TRANSACTIONS CARREGADO ===');
     </script>
 </th:block>
 </body>

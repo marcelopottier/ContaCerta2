@@ -4,11 +4,14 @@ import com.univille.controle_financeiro.entity.User;
 import com.univille.controle_financeiro.service.CategoryService;
 import com.univille.controle_financeiro.service.TransactionService;
 import com.univille.controle_financeiro.service.UserService;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -239,13 +242,17 @@ public class WebController {
         User user = getCurrentUser(authentication);
 
         try {
+            if (color == null || color.trim().isEmpty()) {
+                color = "#6f42c1";
+            }
+
             if (id != null) {
                 // Edição
-                categoryService.updateCategory(id, name, user);
+                categoryService.updateCategory(id, name, color, user);
                 redirectAttributes.addFlashAttribute("successMessage", "Categoria atualizada com sucesso!");
             } else {
                 // Criação
-                categoryService.createCategory(name, user);
+                categoryService.createCategory(name, color, user);
                 redirectAttributes.addFlashAttribute("successMessage", "Categoria criada com sucesso!");
             }
 
@@ -287,20 +294,96 @@ public class WebController {
         data.put("totalSaidas", totalSaidas);
         data.put("saldo", totalEntradas.subtract(totalSaidas));
 
-        // Totais por categoria
-        data.put("entradasPorCategoria", transactionService.getTotalByTypeAndPeriodGroupByCategory(
-                user, com.univille.controle_financeiro.entity.TransactionType.ENTRADA,
-                startOfMonth, endOfMonth));
-        data.put("saidasPorCategoria", transactionService.getTotalByTypeAndPeriodGroupByCategory(
-                user, com.univille.controle_financeiro.entity.TransactionType.SAIDA,
-                startOfMonth, endOfMonth));
+        // Buscar todas as transações do mês para contagem
+        var allTransactions = transactionService.findByUserAndPeriod(user, startOfMonth, endOfMonth);
+        data.put("totalTransacoes", allTransactions.size());
 
-        // Transações recentes
-        var recentTransactions = transactionService.findByUserAndPeriod(user, startOfMonth, endOfMonth)
-                .stream().limit(10).toList();
+        // Totais por categoria
+        var entradasPorCategoria = transactionService.getTotalByTypeAndPeriodGroupByCategory(
+                user, com.univille.controle_financeiro.entity.TransactionType.ENTRADA,
+                startOfMonth, endOfMonth);
+        var saidasPorCategoria = transactionService.getTotalByTypeAndPeriodGroupByCategory(
+                user, com.univille.controle_financeiro.entity.TransactionType.SAIDA,
+                startOfMonth, endOfMonth);
+
+        data.put("entradasPorCategoria", entradasPorCategoria);
+        data.put("saidasPorCategoria", saidasPorCategoria);
+
+        // Transações recentes (limitadas a 10)
+        var recentTransactions = allTransactions.stream()
+                .sorted((t1, t2) -> t2.getDate().compareTo(t1.getDate())) // Ordenar por data desc
+                .limit(10)
+                .toList();
         data.put("recentTransactions", recentTransactions);
 
+        System.out.println("Dashboard Data:");
+        System.out.println("- Total Transações: " + allTransactions.size());
+        System.out.println("- Total Entradas: " + totalEntradas);
+        System.out.println("- Total Saídas: " + totalSaidas);
+        System.out.println("- Entradas por Categoria: " + entradasPorCategoria);
+        System.out.println("- Saídas por Categoria: " + saidasPorCategoria);
+        System.out.println("- Transações Recentes: " + recentTransactions.size());
+
         return data;
+    }
+    @GetMapping("/api/dashboard/chart-data")
+    @ResponseBody
+    public Map<String, Object> getChartData(@RequestParam(defaultValue = "month") String period,
+                                            Authentication authentication) {
+        try {
+            User user = getCurrentUser(authentication);
+
+            LocalDate[] dateRange = calculateDateRange(period);
+            LocalDate startDate = dateRange[0];
+            LocalDate endDate = dateRange[1];
+
+            System.out.println("Período: " + period + " | De: " + startDate + " | Até: " + endDate);
+
+            var entradasPorCategoria = transactionService.getTotalByTypeAndPeriodGroupByCategory(
+                    user, com.univille.controle_financeiro.entity.TransactionType.ENTRADA,
+                    startDate, endDate);
+            var saidasPorCategoria = transactionService.getTotalByTypeAndPeriodGroupByCategory(
+                    user, com.univille.controle_financeiro.entity.TransactionType.SAIDA,
+                    startDate, endDate);
+
+            Map<String, Object> chartData = new HashMap<>();
+            chartData.put("entradas", entradasPorCategoria);
+            chartData.put("saidas", saidasPorCategoria);
+            chartData.put("period", period);
+            chartData.put("startDate", startDate.toString());
+            chartData.put("endDate", endDate.toString());
+
+            return chartData;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Map.of("error", e.getMessage());
+        }
+    }
+
+    private LocalDate[] calculateDateRange(String period) {
+        LocalDate now = LocalDate.now();
+        LocalDate startDate, endDate;
+
+        switch (period.toLowerCase()) {
+            case "quarter":
+                startDate = now.minusMonths(2).withDayOfMonth(1);
+                endDate = now.withDayOfMonth(now.lengthOfMonth());
+                break;
+
+            case "year":
+                startDate = now.withDayOfYear(1);
+                endDate = now.withDayOfYear(now.lengthOfYear());
+                break;
+
+            case "month":
+            default:
+                startDate = now.withDayOfMonth(1);
+                endDate = now.withDayOfMonth(now.lengthOfMonth());
+                break;
+        }
+
+        return new LocalDate[]{startDate, endDate};
     }
 
     private Map<String, Object> getCategoriesStats(User user) {

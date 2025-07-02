@@ -7,6 +7,9 @@
 <head>
     <title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">Dashboard</title>
 
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <th:block layout:fragment="css">
         <style>
             /* Fundo geral da aplicação */
@@ -207,6 +210,17 @@
                     padding-bottom: 6rem !important;
                 }
             }
+
+            /* Estilo para item ativo no dropdown */
+            .dropdown-item.active {
+                background-color: var(--bs-primary);
+                color: white;
+            }
+
+            .dropdown-item.active:hover {
+                background-color: var(--bs-primary);
+                color: white;
+            }
         </style>
     </th:block>
 </head>
@@ -279,7 +293,7 @@
                         <div class="flex-grow-1">
                             <div class="stats-label mb-1">Transações</div>
                             <div class="stats-value"
-                                 th:text="${dashboardData['totalTransacoes'] != null ? dashboardData['totalTransacoes'] : '0'}">
+                                 th:text="${dashboardData?.totalTransacoes != null ? dashboardData.totalTransacoes : '0'}">
                                 0
                             </div>
                             <small class="opacity-75">
@@ -311,7 +325,7 @@
                                 <i class="bi bi-calendar me-1"></i>Este mês
                             </button>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="#" data-period="month">Este mês</a></li>
+                                <li><a class="dropdown-item active" href="#" data-period="month">Este mês</a></li>
                                 <li><a class="dropdown-item" href="#" data-period="quarter">Últimos 3 meses</a></li>
                                 <li><a class="dropdown-item" href="#" data-period="year">Este ano</a></li>
                             </ul>
@@ -325,7 +339,7 @@
                             <i class="bi bi-bar-chart text-muted" style="font-size: 4rem;"></i>
                             <h5 class="text-muted mt-3">Nenhuma movimentação encontrada</h5>
                             <p class="text-muted">Adicione algumas transações para ver os gráficos</p>
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transactionModal">
+                            <button class="btn btn-primary" onclick="newTransaction()">
                                 <i class="bi bi-plus me-1"></i>Adicionar Transação
                             </button>
                         </div>
@@ -383,7 +397,7 @@
                             <i class="bi bi-receipt text-muted" style="font-size: 3rem;"></i>
                             <h6 class="text-muted mt-3">Nenhuma transação</h6>
                             <p class="text-muted small">Suas transações aparecerão aqui</p>
-                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#transactionModal">
+                            <button class="btn btn-primary btn-sm" onclick="newTransaction()">
                                 <i class="bi bi-plus me-1"></i>Adicionar primeira
                             </button>
                         </div>
@@ -396,12 +410,12 @@
         <div class="d-lg-none mt-4 mb-5">
             <div class="row g-2">
                 <div class="col-6">
-                    <button class="btn w-100" style="background: linear-gradient(135deg, #10b981, #059669); border: none; color: white;" data-bs-toggle="modal" data-bs-target="#transactionModal" data-type="ENTRADA">
+                    <button class="btn w-100" style="background: linear-gradient(135deg, #10b981, #059669); border: none; color: white;" onclick="newTransaction('ENTRADA')">
                         <i class="bi bi-plus-circle me-1"></i>Nova Entrada
                     </button>
                 </div>
                 <div class="col-6">
-                    <button class="btn w-100" style="background: linear-gradient(135deg, #f87171, #ef4444); border: none; color: white;" data-bs-toggle="modal" data-bs-target="#transactionModal" data-type="SAIDA">
+                    <button class="btn w-100" style="background: linear-gradient(135deg, #f87171, #ef4444); border: none; color: white;" onclick="newTransaction('SAIDA')">
                         <i class="bi bi-dash-circle me-1"></i>Nova Saída
                     </button>
                 </div>
@@ -412,8 +426,7 @@
     <!-- Floating Action Button (Desktop) -->
     <div class="d-none d-lg-block">
         <button class="btn quick-action-btn"
-                data-bs-toggle="modal"
-                data-bs-target="#transactionModal"
+                onclick="newTransaction()"
                 data-bs-placement="left"
                 title="Nova Transação">
             <i class="bi bi-plus fs-4"></i>
@@ -426,138 +439,416 @@
 
 <th:block layout:fragment="javascript">
     <script>
+        console.log('=== INÍCIO DO SCRIPT DASHBOARD ===');
+
+        let dashboardChart = null;
+        let currentPeriod = 'month'; // Período atual
+
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize chart
+            console.log('DOM carregado - dashboard.html');
             initializeChart();
-
-            // Setup modal for quick actions
             setupTransactionModal();
-
-            // Setup period filter
             setupPeriodFilter();
+            loadCategoriesForModal();
         });
 
-        function initializeChart() {
+        // Função utilitária para formatação de moeda
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value);
+        }
+
+        function initializeChart(period = 'month') {
+            console.log('Inicializando gráfico com período:', period);
+
             const ctx = document.getElementById('categoryChart');
             const emptyState = document.getElementById('chartEmptyState');
 
-            // Check if we have data
-            const hasData = /*[[${dashboardData?.entradasPorCategoria != null and !dashboardData.entradasPorCategoria.isEmpty()}]]*/ false ||
-                           /*[[${dashboardData?.saidasPorCategoria != null and !dashboardData.saidasPorCategoria.isEmpty()}]]*/ false;
+            if (!ctx) {
+                console.error('Canvas categoryChart não encontrado');
+                return;
+            }
+
+            // Carregar dados via API com período
+            loadChartDataFromAPI(ctx, emptyState, period);
+        }
+
+        async function loadChartDataFromAPI(ctx, emptyState, period = 'month') {
+            try {
+                console.log('Carregando dados do gráfico via API para período:', period);
+
+                const response = await fetch(`/api/dashboard/chart-data?period=${period}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Dados recebidos da API:', data);
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Atualizar período atual
+                currentPeriod = period;
+
+                createChart(ctx, emptyState, data.entradas, data.saidas, data);
+
+            } catch (error) {
+                console.error('Erro ao carregar dados via API:', error);
+
+                // Fallback para dados do Thymeleaf apenas no carregamento inicial
+                if (period === 'month') {
+                    console.log('Tentando usar dados do Thymeleaf...');
+                    loadChartDataFromThymeleaf(ctx, emptyState);
+                } else {
+                    // Para outros períodos, mostrar erro
+                    ctx.style.display = 'none';
+                    emptyState.style.display = 'block';
+                }
+            }
+        }
+
+        function loadChartDataFromThymeleaf(ctx, emptyState) {
+            // Dados do gráfico vindos do servidor (Thymeleaf)
+            const entradasData = /*[[${dashboardData?.entradasPorCategoria}]]*/ {};
+            const saidasData = /*[[${dashboardData?.saidasPorCategoria}]]*/ {};
+
+            console.log('Dados do Thymeleaf - Entradas:', entradasData);
+            console.log('Dados do Thymeleaf - Saídas:', saidasData);
+
+            createChart(ctx, emptyState, entradasData, saidasData);
+        }
+
+        function createChart(ctx, emptyState, entradasData, saidasData, metadata = {}) {
+            // Verificar se temos dados
+            const hasEntradas = entradasData && Object.keys(entradasData).length > 0;
+            const hasSaidas = saidasData && Object.keys(saidasData).length > 0;
+            const hasData = hasEntradas || hasSaidas;
+
+            console.log('Análise dos dados:', {
+                hasEntradas,
+                hasSaidas,
+                hasData,
+                entradasKeys: Object.keys(entradasData || {}),
+                saidasKeys: Object.keys(saidasData || {}),
+                metadata
+            });
 
             if (!hasData) {
+                console.log('Nenhum dado encontrado, mostrando estado vazio');
                 ctx.style.display = 'none';
                 emptyState.style.display = 'block';
                 return;
             }
 
-            // Prepare chart data
-            const entradas = /*[[${dashboardData?.entradasPorCategoria}]]*/ {};
-            const saidas = /*[[${dashboardData?.saidasPorCategoria}]]*/ {};
+            // Mostrar canvas e esconder estado vazio
+            ctx.style.display = 'block';
+            emptyState.style.display = 'none';
 
-            const allCategories = [...new Set([...Object.keys(entradas), ...Object.keys(saidas)])];
+            // Preparar dados para o gráfico
+            const allCategories = [...new Set([
+                ...Object.keys(entradasData || {}),
+                ...Object.keys(saidasData || {})
+            ])];
 
-            const chart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: allCategories,
-                    datasets: [
-                        {
-                            label: 'Entradas',
-                            data: allCategories.map(cat => entradas[cat] || 0),
-                            backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                            borderColor: 'rgba(5, 150, 105, 1)',
-                            borderWidth: 1,
-                            borderRadius: 4
-                        },
-                        {
-                            label: 'Saídas',
-                            data: allCategories.map(cat => saidas[cat] || 0),
-                            backgroundColor: 'rgba(248, 113, 113, 0.8)',
-                            borderColor: 'rgba(239, 68, 68, 1)',
-                            borderWidth: 1,
-                            borderRadius: 4
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                usePointStyle: true,
-                                padding: 15
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white',
-                            borderColor: 'rgba(255, 255, 255, 0.1)',
-                            borderWidth: 1,
-                            callbacks: {
-                                label: function(context) {
-                                    return context.dataset.label + ': ' +
-                                           FinanceApp.format.currency(context.parsed.y);
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
+            console.log('Categorias para o gráfico:', allCategories);
+
+            if (allCategories.length === 0) {
+                ctx.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            // Destruir gráfico anterior se existir
+            if (dashboardChart) {
+                dashboardChart.destroy();
+            }
+
+            // Preparar título baseado no período
+            let periodTitle = '';
+            if (metadata.period) {
+                switch (metadata.period) {
+                    case 'month':
+                        periodTitle = 'Este Mês';
+                        break;
+                    case 'quarter':
+                        periodTitle = 'Últimos 3 Meses';
+                        break;
+                    case 'year':
+                        periodTitle = 'Este Ano';
+                        break;
+                    default:
+                        periodTitle = 'Período Selecionado';
+                }
+            }
+
+            // Criar o gráfico
+            try {
+                dashboardChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: allCategories,
+                        datasets: [
+                            {
+                                label: 'Entradas',
+                                data: allCategories.map(cat => entradasData[cat] || 0),
+                                backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                                borderColor: 'rgba(5, 150, 105, 1)',
+                                borderWidth: 1,
+                                borderRadius: 4
                             },
-                            ticks: {
-                                callback: function(value) {
-                                    return FinanceApp.format.currency(value);
+                            {
+                                label: 'Saídas',
+                                data: allCategories.map(cat => saidasData[cat] || 0),
+                                backgroundColor: 'rgba(248, 113, 113, 0.8)',
+                                borderColor: 'rgba(239, 68, 68, 1)',
+                                borderWidth: 1,
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: !!periodTitle,
+                                text: periodTitle,
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                padding: {
+                                    bottom: 10
+                                }
+                            },
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    usePointStyle: true,
+                                    padding: 15
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: 'white',
+                                bodyColor: 'white',
+                                borderColor: 'rgba(255, 255, 255, 0.1)',
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + formatCurrency(context.parsed.y);
+                                    }
                                 }
                             }
                         },
-                        x: {
-                            grid: {
-                                display: false
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return formatCurrency(value);
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
                             }
                         }
                     }
+                });
+
+                console.log('Gráfico criado com sucesso para período:', metadata.period || 'padrão');
+
+            } catch (error) {
+                console.error('Erro ao criar gráfico:', error);
+                ctx.style.display = 'none';
+                emptyState.style.display = 'block';
+            }
+        }
+
+        // Função para carregar categorias na modal
+        async function loadCategoriesForModal() {
+            console.log('Carregando categorias para modal...');
+
+            const select = document.getElementById('transactionCategory');
+            if (!select) {
+                console.warn('Select de categorias não encontrado na modal');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/categories');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const categories = await response.json();
+                console.log('Categorias carregadas:', categories);
+
+                select.innerHTML = '<option value="">Escolha uma categoria</option>';
+
+                if (categories && categories.length > 0) {
+                    categories.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.id;
+                        option.textContent = category.name;
+                        if (category.color) {
+                            option.style.color = category.color;
+                        }
+                        select.appendChild(option);
+                    });
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar categorias:', error);
+                select.innerHTML = '<option value="" disabled>Erro ao carregar categorias</option>';
+            }
+        }
+
+        function setupTransactionModal() {
+            console.log('Configurando modal de transação...');
+
+            const modal = document.getElementById('transactionModal');
+            const form = document.getElementById('transactionForm');
+
+            if (!modal || !form) {
+                console.warn('Modal ou formulário não encontrado');
+                return;
+            }
+
+            // Setup do formulário
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+
+                if (!form.checkValidity()) {
+                    form.classList.add('was-validated');
+                    return;
+                }
+
+                const formData = new FormData(form);
+                const data = {
+                    type: formData.get('type'),
+                    value: parseFloat(formData.get('value')),
+                    date: formData.get('date'),
+                    categoryId: parseInt(formData.get('categoryId')),
+                    description: formData.get('description') || null
+                };
+
+                try {
+                    const response = await fetch('/api/transactions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_csrf"]')?.value || ''
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (response.ok) {
+                        bootstrap.Modal.getInstance(modal).hide();
+                        setTimeout(() => window.location.reload(), 500);
+                    } else {
+                        alert('Erro ao salvar transação');
+                    }
+                } catch (error) {
+                    console.error('Erro:', error);
+                    alert('Erro de conexão');
+                }
+            });
+
+            // Reset form when modal closes
+            modal.addEventListener('hidden.bs.modal', function() {
+                form.reset();
+                form.classList.remove('was-validated');
+
+                // Reset date to today
+                const dateInput = document.getElementById('transactionDate');
+                if (dateInput) {
+                    dateInput.value = new Date().toISOString().split('T')[0];
                 }
             });
         }
 
-        function setupTransactionModal() {
-            const modal = document.getElementById('transactionModal');
-            if (!modal) return;
-
-            // Handle quick action buttons
-            document.querySelectorAll('[data-bs-target="#transactionModal"]').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const type = this.dataset.type || 'ENTRADA';
-                    const typeSelect = modal.querySelector('#transactionType');
-                    if (typeSelect) {
-                        typeSelect.value = type;
-                    }
-                });
-            });
-        }
-
         function setupPeriodFilter() {
+            console.log('Configurando filtros de período...');
+
             document.querySelectorAll('[data-period]').forEach(item => {
                 item.addEventListener('click', function(e) {
                     e.preventDefault();
                     const period = this.dataset.period;
 
+                    console.log('Período selecionado:', period);
+
                     // Update button text
                     const btn = this.closest('.dropdown').querySelector('.dropdown-toggle');
                     btn.innerHTML = `<i class="bi bi-calendar me-1"></i>${this.textContent}`;
 
-                    // TODO: Reload dashboard data with new period
-                    console.log('Filter by period:', period);
+                    // Marcar item ativo
+                    document.querySelectorAll('[data-period]').forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Recarregar gráfico com novo período
+                    initializeChart(period);
                 });
             });
         }
+
+        // Função global para nova transação
+        window.newTransaction = function(type = 'ENTRADA') {
+            console.log('Nova transação:', type);
+
+            loadCategoriesForModal();
+
+            const modal = document.getElementById('transactionModal');
+            const typeSelect = document.getElementById('transactionType');
+            const dateInput = document.getElementById('transactionDate');
+
+            if (typeSelect) {
+                typeSelect.value = type;
+            }
+
+            if (dateInput && !dateInput.value) {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+
+            const modalInstance = new bootstrap.Modal(modal);
+            modalInstance.show();
+        }
+
+        // Função para recarregar gráfico manualmente
+        window.reloadChart = function(period = currentPeriod) {
+            console.log('Recarregando gráfico manualmente para período:', period);
+            initializeChart(period);
+        }
+
+        // Função para testar dados do gráfico
+        window.testChartData = function(period = 'month') {
+            console.log('=== TESTE DOS DADOS DO GRÁFICO ===');
+            console.log('Período:', period);
+
+            fetch(`/api/dashboard/chart-data?period=${period}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Dados da API:', data);
+                    console.log('Período retornado:', data.period);
+                    console.log('Data início:', data.startDate);
+                    console.log('Data fim:', data.endDate);
+                    console.log('Tem entradas?', data.entradas && Object.keys(data.entradas).length > 0);
+                    console.log('Tem saídas?', data.saidas && Object.keys(data.saidas).length > 0);
+                })
+                .catch(error => console.error('Erro:', error));
+        }
+
+        console.log('=== SCRIPT DASHBOARD CARREGADO ===');
     </script>
 </th:block>
 </body>

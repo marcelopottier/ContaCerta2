@@ -40,8 +40,12 @@ public class CategoryController {
     public ResponseEntity<?> createCategory(@Valid @RequestBody CategoryRequest request, Authentication authentication) {
         try {
             User user = getUserFromAuth(authentication);
-            Category category = categoryService.createCategory(request.getName(), user);
-            return ResponseEntity.ok(category);
+            Category category = categoryService.createCategory(
+                    request.getName(),
+                    request.getColor(),
+                    user
+            );
+            return ResponseEntity.ok(CategoryDTO.fromEntity(category));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body("Erro: " + e.getMessage());
         }
@@ -52,8 +56,13 @@ public class CategoryController {
                                             Authentication authentication) {
         try {
             User user = getUserFromAuth(authentication);
-            Category category = categoryService.updateCategory(id, request.getName(), user);
-            return ResponseEntity.ok(category);
+            Category category = categoryService.updateCategory(
+                    id,
+                    request.getName(),
+                    request.getColor(),
+                    user
+            );
+            return ResponseEntity.ok(CategoryDTO.fromEntity(category));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body("Erro: " + e.getMessage());
         }

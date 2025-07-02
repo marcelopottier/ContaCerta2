@@ -25,6 +25,30 @@
         .form-control:invalid {
             border-color: #dc3545;
         }
+
+        .category-option {
+            display: flex;
+            align-items: center;
+        }
+
+        .category-color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .loading-categories {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .error-categories {
+            color: #dc3545;
+            font-size: 0.875rem;
+        }
     </style>
 </head>
 <body>
@@ -36,7 +60,8 @@
             <form id="transactionForm" novalidate>
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="bi bi-plus-circle"></i>Nova Transação
+                        <i class="bi bi-plus-circle"></i>
+                        <span id="modalTitle">Nova Transação</span>
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
@@ -62,8 +87,11 @@
                     <div class="mb-3">
                         <label class="form-label"><i class="bi bi-tags"></i>Categoria</label>
                         <select class="form-select" name="categoryId" id="transactionCategory" required>
-                            <option value="">Escolha uma categoria</option>
+                            <option value="" class="loading-categories">Carregando categorias...</option>
                         </select>
+                        <div id="categoryError" class="error-categories" style="display: none;">
+                            Erro ao carregar categorias. <a href="#" onclick="loadCategories()">Tentar novamente</a>
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -73,7 +101,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Salvar</button>
                 </div>
 
                 <input type="hidden" id="transactionId" name="id">
@@ -82,20 +110,53 @@
         </div>
     </div>
 </div>
+
 <script>
+    console.log('Script carregado!');
+
     let isEditMode = false;
     let currentTransactionId = null;
+    let categoriesLoaded = false;
 
     document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM carregado, iniciando configurações...');
+
+        // Verificar se elementos existem
+        const dateInput = document.getElementById('transactionDate');
+        const categorySelect = document.getElementById('transactionCategory');
+        const form = document.getElementById('transactionForm');
+
+        console.log('Elementos encontrados:', {
+            dateInput: !!dateInput,
+            categorySelect: !!categorySelect,
+            form: !!form
+        });
+
+        if (!dateInput || !categorySelect || !form) {
+            console.error('Elementos essenciais não encontrados!');
+            return;
+        }
+
+        // Definir data padrão como hoje
+        dateInput.value = new Date().toISOString().split('T')[0];
+        console.log('Data definida para:', dateInput.value);
+
+        console.log('Chamando loadCategories...');
         loadCategories();
 
         const form = document.getElementById('transactionForm');
         form.addEventListener('submit', async function (e) {
             e.preventDefault();
+
             if (!form.checkValidity()) {
                 form.classList.add('was-validated');
                 return;
             }
+
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Salvando...';
 
             const data = {
                 type: form.transactionType.value,
@@ -104,7 +165,7 @@
                 categoryId: parseInt(form.transactionCategory.value),
                 description: form.transactionDescription.value || null
             };
-
+            console.log(data);
             const url = isEditMode
                 ? `/api/transactions/${currentTransactionId}`
                 : '/api/transactions';
@@ -122,17 +183,39 @@
 
                 if (response.ok) {
                     bootstrap.Modal.getInstance(document.getElementById('transactionModal')).hide();
-                    window.location.reload();
+
+                    // Mostrar mensagem de sucesso se existir FinanceApp
+                    if (typeof FinanceApp !== 'undefined' && FinanceApp.ui) {
+                        const message = isEditMode ? 'Transação atualizada com sucesso!' : 'Transação criada com sucesso!';
+                        FinanceApp.ui.showAlert(message, 'success');
+                    }
+
+                    // Recarregar página após delay para mostrar mensagem
+                    setTimeout(() => window.location.reload(), 1000);
                 } else {
-                    alert("Erro ao salvar transação");
+                    const errorData = await response.text();
+                    console.error('Erro do servidor:', errorData);
+                    alert("Erro ao salvar transação: " + errorData);
                 }
             } catch (err) {
-                console.error(err);
-                alert("Erro de rede");
+                console.error('Erro de rede:', err);
+                alert("Erro de conexão. Verifique sua internet e tente novamente.");
+            } finally {
+                // Reabilitar botão
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             }
         });
 
+        // Reset form when modal is hidden
         document.getElementById('transactionModal').addEventListener('hidden.bs.modal', resetForm);
+
+        // Load categories when modal is shown (caso não tenha carregado antes)
+        document.getElementById('transactionModal').addEventListener('show.bs.modal', function() {
+            if (!categoriesLoaded) {
+                loadCategories();
+            }
+        });
     });
 
     function resetForm() {
@@ -141,47 +224,164 @@
         form.classList.remove('was-validated');
         isEditMode = false;
         currentTransactionId = null;
+
+        // Reset modal title
+        document.getElementById('modalTitle').textContent = 'Nova Transação';
+
+        // Reset date to today
+        document.getElementById('transactionDate').value = new Date().toISOString().split('T')[0];
     }
 
-    function loadCategories() {
-        fetch('/api/categories')
-            .then(res => res.json())
-            .then(categories => {
-                const select = document.getElementById('transactionCategory');
-                select.innerHTML = '<option value="">Escolha uma categoria</option>';
-                categories.forEach(c => {
+    async function loadCategories() {
+        console.log('=== INICIANDO loadCategories ===');
+
+        const select = document.getElementById('transactionCategory');
+        const errorDiv = document.getElementById('categoryError');
+
+        if (!select) {
+            console.error('Select de categorias não encontrado!');
+            return;
+        }
+
+        console.log('Select encontrado:', select);
+
+        try {
+            console.log('Iniciando requisição para /api/categories');
+
+            // Mostrar estado de carregamento
+            select.innerHTML = '<option value="" disabled>Carregando categorias...</option>';
+            if (errorDiv) errorDiv.style.display = 'none';
+
+            const csrfToken = document.getElementById('csrfToken')?.value;
+            console.log('CSRF Token:', csrfToken ? 'Presente' : 'Ausente');
+
+            console.log('Fazendo fetch...');
+            const response = await fetch('/api/categories', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    ...(csrfToken && { 'X-CSRF-TOKEN': csrfToken })
+                }
+            });
+
+            console.log('Response recebida:', {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok,
+                headers: Object.fromEntries(response.headers.entries())
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            console.log('Parseando JSON...');
+            const categories = await response.json();
+            console.log('Categorias recebidas:', categories);
+
+            // Limpar select
+            select.innerHTML = '<option value="">Escolha uma categoria</option>';
+
+            if (categories && Array.isArray(categories) && categories.length > 0) {
+                console.log(`Adicionando ${categories.length} categorias ao select...`);
+
+                categories.forEach((category, index) => {
+                    console.log(`Categoria ${index}:`, category);
+
                     const option = document.createElement('option');
-                    option.value = c.id;
-                    option.textContent = c.name;
+                    option.value = category.id;
+                    option.textContent = category.name;
+
+                    // Adicionar cor como data attribute para futura customização
+                    if (category.color) {
+                        option.setAttribute('data-color', category.color);
+                    }
+
                     select.appendChild(option);
                 });
-            })
-            .catch(err => console.error('Erro ao carregar categorias:', err));
+
+                categoriesLoaded = true;
+                console.log('✅ Categorias carregadas com sucesso!');
+            } else {
+                select.innerHTML = '<option value="" disabled>Nenhuma categoria encontrada</option>';
+                console.warn('❌ Nenhuma categoria retornada da API ou formato inválido');
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao carregar categorias:', error);
+            console.error('Stack trace:', error.stack);
+
+            select.innerHTML = '<option value="" disabled>Erro ao carregar categorias</option>';
+            if (errorDiv) errorDiv.style.display = 'block';
+
+            // Se o erro for de autenticação, redirecionar para login
+            if (error.message.includes('401') || error.message.includes('403')) {
+                console.log('Erro de autenticação detectado, redirecionando...');
+                alert('Sessão expirada. Você será redirecionado para o login.');
+                window.location.href = '/login';
+                return;
+            }
+        }
+
+        console.log('=== FIM loadCategories ===');
     }
 
     window.editTransaction = async function (id) {
         try {
-            const res = await fetch(`/api/transactions/${id}`);
-            if (!res.ok) throw new Error('Erro ao carregar transação');
-            const t = await res.json();
+            console.log('Editando transação:', id);
+
+            const response = await fetch(`/api/transactions/${id}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.getElementById('csrfToken')?.value || ''
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Erro ao carregar transação: ${response.status}`);
+            }
+
+            const transaction = await response.json();
+            console.log('Dados da transação:', transaction);
+
+            // Garantir que as categorias estejam carregadas antes de editar
+            if (!categoriesLoaded) {
+                await loadCategories();
+            }
 
             isEditMode = true;
             currentTransactionId = id;
 
-            document.getElementById('transactionId').value = t.id;
-            document.getElementById('transactionType').value = t.type;
-            document.getElementById('transactionValue').value = t.value;
-            document.getElementById('transactionDate').value = t.date;
-            document.getElementById('transactionCategory').value = t.categoryId;
-            document.getElementById('transactionDescription').value = t.description || '';
+            // Preencher formulário
+            document.getElementById('transactionId').value = transaction.id;
+            document.getElementById('transactionType').value = transaction.type;
+            document.getElementById('transactionValue').value = transaction.value;
+            document.getElementById('transactionDate').value = transaction.date;
+            document.getElementById('transactionCategory').value = transaction.categoryId || transaction.category?.id;
+            document.getElementById('transactionDescription').value = transaction.description || '';
 
+            // Alterar título do modal
+            document.getElementById('modalTitle').textContent = 'Editar Transação';
+
+            // Mostrar modal
             const modal = new bootstrap.Modal(document.getElementById('transactionModal'));
             modal.show();
-        } catch (err) {
-            console.error(err);
-            alert('Erro ao carregar dados da transação.');
+
+        } catch (error) {
+            console.error('Erro ao carregar transação:', error);
+            alert('Erro ao carregar dados da transação: ' + error.message);
         }
     }
+
+    // Função para testar manualmente
+    window.testLoadCategories = function() {
+        console.log('Teste manual iniciado...');
+        loadCategories();
+    }
+
+    // Teste simples
+    console.log('JavaScript funcionando! Timestamp:', new Date().toISOString());
 </script>
 
 </body>

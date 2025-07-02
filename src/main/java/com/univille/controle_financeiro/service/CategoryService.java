@@ -18,22 +18,29 @@ public class CategoryService {
         return categoryRepository.findByUserOrderByNameAsc(user);
     }
 
-    public Category createCategory(String name, User user) {
-        Category category = new Category();
-        category.setName(name);
-        category.setUser(user);
+    public Category createCategory(String name, String color, User user) {
+        if (categoryRepository.existsByNameAndUser(name, user)) {
+            throw new RuntimeException("Categoria com esse nome já existe");
+        }
+
+        Category category = new Category(name, user, color);
         return categoryRepository.save(category);
     }
 
-    public Category updateCategory(Long id, String name, User user) {
-        Category category = categoryRepository.findById(id)
+    public Category updateCategory(Long id, String name, String color, User user) {
+        Category category = categoryRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new RuntimeException("Categoria não encontrada"));
 
-        if (!category.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Acesso negado");
+        if (!category.getName().equals(name) &&
+                categoryRepository.existsByNameAndUser(name, user)) {
+            throw new RuntimeException("Categoria com esse nome já existe");
         }
 
         category.setName(name);
+        if (color != null && !color.isEmpty()) {
+            category.setColor(color);
+        }
+
         return categoryRepository.save(category);
     }
 

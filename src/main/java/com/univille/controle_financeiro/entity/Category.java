@@ -32,9 +32,10 @@ public class Category {
     // Constructors
     public Category() {}
 
-    public Category(String name, User user) {
+    public Category(String name, User user, String color) {
         this.name = name;
         this.user = user;
+        this.color = color;
     }
 
     // Getters and Setters

@@ -14,7 +14,7 @@
             .category-card {
                 transition: all 0.3s ease;
                 cursor: pointer;
-                border-left: 4px solid var(--primary-color);
+                border-left: 4px solid var(--category-color, var(--primary-color));
             }
 
             .category-card:hover {
@@ -31,7 +31,7 @@
                 justify-content: center;
                 font-size: 1.5rem;
                 color: white;
-                background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+                background: var(--category-color, var(--primary-color));
             }
 
             .category-stats {
@@ -60,6 +60,7 @@
                 border: 3px solid transparent;
                 cursor: pointer;
                 transition: all 0.2s ease;
+                position: relative;
             }
 
             .color-option:hover {
@@ -69,6 +70,27 @@
             .color-option.selected {
                 border-color: #fff;
                 box-shadow: 0 0 0 2px var(--primary-color);
+            }
+
+            .color-option.selected::after {
+                content: '✓';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: white;
+                font-weight: bold;
+                font-size: 12px;
+                text-shadow: 0 0 2px rgba(0,0,0,0.5);
+            }
+
+            .category-color-indicator {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                display: inline-block;
+                margin-right: 8px;
+                border: 2px solid rgba(255,255,255,0.3);
             }
         </style>
     </th:block>
@@ -116,14 +138,19 @@
                                 <div th:each="category : ${categories}"
                                      class="col-lg-4 col-md-6 category-item"
                                      th:data-name="${#strings.toLowerCase(category.name)}">
-                                    <div class="card category-card h-100">
+                                    <div class="card category-card h-100"
+                                         th:style="'--category-color: ' + ${category.color ?: '#6f42c1'} + ';'">
                                         <div class="card-body">
                                             <div class="d-flex align-items-start">
                                                 <div class="category-icon me-3">
                                                     <i class="bi bi-tag"></i>
                                                 </div>
                                                 <div class="flex-grow-1">
-                                                    <h6 class="card-title mb-1" th:text="${category.name}">Nome da Categoria</h6>
+                                                    <h6 class="card-title mb-1">
+                                                        <span class="category-color-indicator"
+                                                              th:style="'background-color: ' + ${category.color ?: '#6f42c1'} + ';'"></span>
+                                                        <span th:text="${category.name}">Nome da Categoria</span>
+                                                    </h6>
                                                     <div class="category-stats text-muted">
                                                         <small>
                                                             <i class="bi bi-arrow-left-right me-1"></i>
@@ -137,18 +164,19 @@
                                             <div class="action-buttons mt-3">
                                                 <div class="d-flex gap-1">
                                                     <button class="btn btn-outline-primary btn-sm flex-fill"
-                                                            data-category-id="[[${category.id}]]"
-                                                            data-category-name="[[${category.name}]]"
+                                                            th:attr="data-category-id=${category.id},
+                                                                   data-category-name=${category.name},
+                                                                   data-category-color=${category.color ?: '#6f42c1'}"
                                                             onclick="editCategory(this)">
                                                         <i class="bi bi-pencil me-1"></i>Editar
                                                     </button>
                                                     <button class="btn btn-outline-danger btn-sm"
-                                                            data-category-id="[[${category.id}]]"
-                                                            data-category-name="[[${category.name}]]"
+                                                            th:attr="data-category-id=${category.id}, data-category-name=${category.name}"
                                                             onclick="deleteCategory(this)"
                                                             th:disabled="${category.transactions?.size() > 0}">
                                                         <i class="bi bi-trash me-1"></i>
                                                     </button>
+
                                                 </div>
                                             </div>
                                         </div>
@@ -205,43 +233,62 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">
-                                <i class="bi bi-palette me-1"></i>Cor da Categoria (opcional)
+                                <i class="bi bi-palette me-1"></i>Cor da Categoria
                             </label>
                             <div class="color-picker">
+                                <div class="color-option"
+                                     style="background-color: #4CAF50;"
+                                     data-color="#4CAF50"
+                                     title="Verde - Receitas"></div>
+                                <div class="color-option"
+                                     style="background-color: #8BC34A;"
+                                     data-color="#8BC34A"
+                                     title="Verde Claro"></div>
+                                <div class="color-option"
+                                     style="background-color: #2196F3;"
+                                     data-color="#2196F3"
+                                     title="Azul - Essenciais"></div>
+                                <div class="color-option"
+                                     style="background-color: #1976D2;"
+                                     data-color="#1976D2"
+                                     title="Azul Escuro"></div>
+                                <div class="color-option"
+                                     style="background-color: #FF9800;"
+                                     data-color="#FF9800"
+                                     title="Laranja - Lazer"></div>
+                                <div class="color-option"
+                                     style="background-color: #E91E63;"
+                                     data-color="#E91E63"
+                                     title="Rosa"></div>
                                 <div class="color-option selected"
                                      style="background-color: #6f42c1;"
                                      data-color="#6f42c1"
                                      title="Roxo"></div>
                                 <div class="color-option"
-                                     style="background-color: #198754;"
-                                     data-color="#198754"
-                                     title="Verde"></div>
+                                     style="background-color: #F44336;"
+                                     data-color="#F44336"
+                                     title="Vermelho - Impostos"></div>
                                 <div class="color-option"
-                                     style="background-color: #0d6efd;"
-                                     data-color="#0d6efd"
-                                     title="Azul"></div>
+                                     style="background-color: #795548;"
+                                     data-color="#795548"
+                                     title="Marrom"></div>
                                 <div class="color-option"
-                                     style="background-color: #dc3545;"
-                                     data-color="#dc3545"
-                                     title="Vermelho"></div>
-                                <div class="color-option"
-                                     style="background-color: #fd7e14;"
-                                     data-color="#fd7e14"
-                                     title="Laranja"></div>
-                                <div class="color-option"
-                                     style="background-color: #ffc107;"
-                                     data-color="#ffc107"
-                                     title="Amarelo"></div>
-                                <div class="color-option"
-                                     style="background-color: #20c997;"
-                                     data-color="#20c997"
+                                     style="background-color: #009688;"
+                                     data-color="#009688"
                                      title="Teal"></div>
                                 <div class="color-option"
-                                     style="background-color: #e83e8c;"
-                                     data-color="#e83e8c"
-                                     title="Rosa"></div>
+                                     style="background-color: #673AB7;"
+                                     data-color="#673AB7"
+                                     title="Roxo Escuro"></div>
+                                <div class="color-option"
+                                     style="background-color: #607D8B;"
+                                     data-color="#607D8B"
+                                     title="Cinza Azulado"></div>
                             </div>
                             <input type="hidden" id="categoryColor" name="color" value="#6f42c1">
+                            <small class="form-text text-muted">
+                                Escolha uma cor que represente sua categoria. Cores sugeridas: Verde (receitas), Azul (gastos essenciais), Laranja (lazer).
+                            </small>
                         </div>
 
                     </div>
@@ -276,6 +323,7 @@
 <th:block layout:fragment="javascript">
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            let isEditMode = false;
             setupCategoryModal();
             setupSearch();
             setupColorPicker();
@@ -285,64 +333,30 @@
             const modal = document.getElementById('categoryModal');
             const form = modal.querySelector('form');
 
-            // Reset form when modal is shown
-            modal.addEventListener('show.bs.modal', function() {
-                form.reset();
-                form.classList.remove('was-validated');
-                document.getElementById('categoryId').value = '';
-                document.getElementById('categoryModalTitle').textContent = 'Nova Categoria';
-                document.getElementById('categoryModalAction').textContent = 'Salvar Categoria';
-
-                // Reset color selection
-                document.querySelectorAll('.color-option').forEach(option => {
-                    option.classList.remove('selected');
-                });
-                document.querySelector('.color-option[data-color="#6f42c1"]').classList.add('selected');
-                document.getElementById('categoryColor').value = '#6f42c1';
-            });
-
-            // Form submission
-            form.addEventListener('submit', async function(e) {
-                e.preventDefault();
-
-                if (!this.checkValidity()) {
-                    e.stopPropagation();
-                    this.classList.add('was-validated');
-                    return;
-                }
-
-                const submitBtn = this.querySelector('button[type="submit"]');
-                FinanceApp.ui.disableButton(submitBtn);
-
-                try {
-                    const formData = FinanceApp.form.serialize(this);
-                    const isEdit = document.getElementById('categoryId').value;
-
-                    let response;
-                    if (isEdit) {
-                        response = await FinanceApp.http.put(`/api/categories/${isEdit}`, formData);
-                    } else {
-                        response = await FinanceApp.http.post('/api/categories', formData);
-                    }
-
-                    if (response && response.ok) {
-                        bootstrap.Modal.getInstance(modal).hide();
-                        FinanceApp.ui.showAlert(
-                            isEdit ? 'Categoria atualizada com sucesso!' : 'Categoria criada com sucesso!',
-                            'success'
-                        );
-
-                        setTimeout(() => window.location.reload(), 1000);
-                    } else {
-                        const error = await response.text();
-                        FinanceApp.ui.showAlert('Erro ao salvar categoria: ' + error, 'danger');
-                    }
-                } catch (error) {
-                    FinanceApp.ui.showAlert('Erro de conexão. Tente novamente.', 'danger');
-                } finally {
-                    FinanceApp.ui.enableButton(submitBtn);
+            modal.addEventListener('show.bs.modal', function () {
+                if (!isEditMode) {
+                    resetModalForm(form);
                 }
             });
+
+            modal.addEventListener('hidden.bs.modal', function () {
+                isEditMode = false; // reset flag
+            });
+        }
+
+        function resetModalForm(form) {
+            form.reset();
+            form.classList.remove('was-validated');
+            document.getElementById('categoryId').value = '';
+            document.getElementById('categoryModalTitle').textContent = 'Nova Categoria';
+            document.getElementById('categoryModalAction').textContent = 'Salvar Categoria';
+
+            // Reset color selection
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            document.querySelector('.color-option[data-color="#6f42c1"]').classList.add('selected');
+            document.getElementById('categoryColor').value = '#6f42c1';
         }
 
         function setupSearch() {
@@ -377,50 +391,55 @@
         }
 
         function editCategory(button) {
-           // Lê os atributos data do botão
-           const id = button.getAttribute('data-category-id');
-           const name = button.getAttribute('data-category-name');
-            
-           const modal = document.getElementById('categoryModal');
-           const form = modal.querySelector('form');
-            
-           // Set form action for editing
-           form.action = `/categories/${id}`;
-            
-           // Preenche os dados no modal
-           document.getElementById('categoryId').value = id;
-           document.getElementById('categoryName').value = name;
-           document.getElementById('categoryModalTitle').textContent = 'Editar Categoria';
-           document.getElementById('categoryModalAction').textContent = 'Atualizar Categoria';
-            
-           // Abrir modal
-           new bootstrap.Modal(modal).show();
+            const id = button.getAttribute('data-category-id');
+            const name = button.getAttribute('data-category-name');
+            const color = button.getAttribute('data-category-color') || '#6f42c1';
+
+            isEditMode = true;
+
+            const modal = document.getElementById('categoryModal');
+            const form = modal.querySelector('form');
+
+            document.getElementById('categoryId').value = id;
+            document.getElementById('categoryName').value = name;
+            document.getElementById('categoryModalTitle').textContent = 'Editar Categoria';
+            document.getElementById('categoryModalAction').textContent = 'Atualizar Categoria';
+
+            // Set the color
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.classList.remove('selected');
+                if (option.dataset.color === color) {
+                    option.classList.add('selected');
+                }
+            });
+            document.getElementById('categoryColor').value = color;
+
+            new bootstrap.Modal(modal).show();
         }
 
-
         function deleteCategory(button) {
-    const id = button.getAttribute('data-category-id');
-    const name = button.getAttribute('data-category-name');
-    FinanceApp.ui.showConfirmModal(
-        `Tem certeza que deseja excluir a categoria "${name}"?`,
-        async function() {
-            try {
-                const response = await FinanceApp.http.delete(`/api/categories/${id}`);
+            const id = button.getAttribute('data-category-id');
+            const name = button.getAttribute('data-category-name');
+            FinanceApp.ui.showConfirmModal(
+                `Tem certeza que deseja excluir a categoria "${name}"?`,
+                async function() {
+                    try {
+                        const response = await FinanceApp.http.delete(`/api/categories/${id}`);
 
-                if (response && response.ok) {
-                    FinanceApp.ui.showAlert('Categoria excluída com sucesso!', 'success');
-                    setTimeout(() => window.location.reload(), 1000);
-                } else {
-                    const error = await response.text();
-                    FinanceApp.ui.showAlert('Erro ao excluir categoria: ' + error, 'danger');
-                }
-            } catch (error) {
-                FinanceApp.ui.showAlert('Erro de conexão. Tente novamente.', 'danger');
-            }
-        },
-        'Excluir Categoria'
-    );
-}
+                        if (response && response.ok) {
+                            FinanceApp.ui.showAlert('Categoria excluída com sucesso!', 'success');
+                            setTimeout(() => window.location.reload(), 1000);
+                        } else {
+                            const error = await response.text();
+                            FinanceApp.ui.showAlert('Erro ao excluir categoria: ' + error, 'danger');
+                        }
+                    } catch (error) {
+                        FinanceApp.ui.showAlert('Erro de conexão. Tente novamente.', 'danger');
+                    }
+                },
+                'Excluir Categoria'
+            );
+        }
 
     </script>
 </th:block>

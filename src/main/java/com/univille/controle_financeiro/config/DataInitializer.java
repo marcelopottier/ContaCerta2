@@ -97,26 +97,26 @@ public class DataInitializer implements CommandLineRunner {
 
     private List<Category> createCategories(User user) {
         List<Category> categories = List.of(
-                // Receitas
-                new Category("Salário", user),
-                new Category("Freelance", user),
-                new Category("Investimentos", user),
+                // Receitas (tons de verde)
+                new Category("Salário", user, "#4CAF50"),
+                new Category("Freelance", user, "#8BC34A"),
+                new Category("Investimentos", user, "#2E7D32"),
 
-                // Gastos Essenciais
-                new Category("Alimentação", user),
-                new Category("Moradia", user),
-                new Category("Transporte", user),
-                new Category("Saúde", user),
+                // Gastos Essenciais (tons de azul)
+                new Category("Alimentação", user, "#2196F3"),
+                new Category("Moradia", user, "#1976D2"),
+                new Category("Transporte", user, "#3F51B5"),
+                new Category("Saúde", user, "#009688"),
 
-                // Gastos Pessoais
-                new Category("Lazer", user),
-                new Category("Roupas", user),
-                new Category("Tecnologia", user),
-                new Category("Educação", user),
+                // Gastos Pessoais (tons de laranja/roxo)
+                new Category("Lazer", user, "#FF9800"),
+                new Category("Roupas", user, "#E91E63"),
+                new Category("Tecnologia", user, "#9C27B0"),
+                new Category("Educação", user, "#673AB7"),
 
-                // Outros
-                new Category("Impostos", user),
-                new Category("Emergências", user)
+                // Outros (tons de cinza/vermelho)
+                new Category("Impostos", user, "#F44336"),
+                new Category("Emergências", user, "#795548")
         );
 
         return categoryRepository.saveAll(categories);
